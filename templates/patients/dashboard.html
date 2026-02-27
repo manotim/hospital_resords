@@ -1,0 +1,176 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - Hospital Records{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <h2 class="mb-4">Hospital Dashboard</h2>
+    
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card dashboard-card border-left-primary">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Total Patients
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_patients }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-users fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card dashboard-card border-left-success">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Active Patients
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ active_patients }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-procedures fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card dashboard-card border-left-info">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                New Admissions Today
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ new_admissions }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-calendar-plus fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card dashboard-card border-left-warning">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Discharged Today
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ discharged_today }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-calendar-check fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Current Admissions -->
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Current Admissions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Patient ID</th>
+                                    <th>Patient Name</th>
+                                    <th>Department</th>
+                                    <th>Ward/Bed</th>
+                                    <th>Admission Date</th>
+                                    <th>Doctor</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for admission in current_admissions %}
+                                <tr>
+                                    <td>{{ admission.patient.patient_id }}</td>
+                                    <td>{{ admission.patient.get_full_name }}</td>
+                                    <td>{{ admission.department }}</td>
+                                    <td>{{ admission.ward_number }}/{{ admission.bed_number }}</td>
+                                    <td>{{ admission.admission_date|date:"Y-m-d H:i" }}</td>
+                                    <td>Dr. {{ admission.admitting_doctor.get_full_name }}</td>
+                                    <td>
+                                        <a href="{% url 'patients:patient_detail' admission.patient.pk %}" class="btn btn-sm btn-primary">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="7" class="text-center">No active admissions</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <!-- Department Distribution -->
+            <div class="card mb-4">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">Patients by Department</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group">
+                        {% for dept in departments %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            {{ dept.department }}
+                            <span class="badge bg-primary rounded-pill">{{ dept.count }}</span>
+                        </li>
+                        {% empty %}
+                        <li class="list-group-item">No data available</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- Recent Patients -->
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">Recently Registered</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group">
+                        {% for patient in recent_patients %}
+                        <li class="list-group-item">
+                            <a href="{% url 'patients:patient_detail' patient.pk %}">
+                                {{ patient.get_full_name }}
+                            </a>
+                            <br>
+                            <small class="text-muted">{{ patient.registration_date|date:"Y-m-d" }}</small>
+                        </li>
+                        {% empty %}
+                        <li class="list-group-item">No recent patients</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

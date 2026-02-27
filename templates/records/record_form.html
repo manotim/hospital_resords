@@ -1,0 +1,112 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}{{ title }} - Hospital Records{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">{{ title }} for {{ patient.get_full_name }}</h4>
+                </div>
+                <div class="card-body">
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-md-4">{{ form.record_type|as_crispy_field }}</div>
+                            <div class="col-md-4">{{ form.visit_date|as_crispy_field }}</div>
+                        </div>
+                        
+                        <h5 class="mt-4 mb-3">Chief Complaint and History</h5>
+                        <div class="row">
+                            <div class="col-md-6">{{ form.chief_complaint|as_crispy_field }}</div>
+                            <div class="col-md-6">{{ form.history_of_present_illness|as_crispy_field }}</div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">{{ form.review_of_systems|as_crispy_field }}</div>
+                            <div class="col-md-6">{{ form.physical_exam|as_crispy_field }}</div>
+                        </div>
+                        
+                        <h5 class="mt-4 mb-3">Diagnoses</h5>
+                        <div id="diagnoses-formset">
+                            <div class="row mb-2">
+                                <div class="col-md-3"><strong>ICD-10 Code</strong></div>
+                                <div class="col-md-7"><strong>Description</strong></div>
+                                <div class="col-md-2"><strong>Primary</strong></div>
+                            </div>
+                            <div class="row mb-2 diagnosis-row">
+                                <div class="col-md-3">
+                                    <input type="text" name="icd10_code" class="form-control" placeholder="e.g., I10">
+                                </div>
+                                <div class="col-md-7">
+                                    <input type="text" name="diagnosis_description" class="form-control" placeholder="Diagnosis description">
+                                </div>
+                                <div class="col-md-2">
+                                    <input type="checkbox" name="is_primary" class="form-check-input" style="margin-top: 10px;">
+                                </div>
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-secondary mb-4" onclick="addDiagnosisRow()">
+                            <i class="fas fa-plus me-1"></i>Add Another Diagnosis
+                        </button>
+                        
+                        <h5 class="mt-4 mb-3">Assessment and Plan</h5>
+                        <div class="row">
+                            <div class="col-md-6">{{ form.assessment|as_crispy_field }}</div>
+                            <div class="col-md-6">{{ form.plan|as_crispy_field }}</div>
+                        </div>
+                        
+                        <h5 class="mt-4 mb-3">Follow-up</h5>
+                        <div class="row">
+                            <div class="col-md-4">{{ form.follow_up_date|as_crispy_field }}</div>
+                            <div class="col-md-8">{{ form.follow_up_instructions|as_crispy_field }}</div>
+                        </div>
+                        
+                        {{ form.is_active|as_crispy_field }}
+                        
+                        <div class="mt-4">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>Save Record
+                            </button>
+                            {% if record %}
+                                <a href="{% url 'records:record_detail' record.pk %}" class="btn btn-secondary">Cancel</a>
+                            {% else %}
+                                <a href="{% url 'patients:patient_detail' patient.pk %}" class="btn btn-secondary">Cancel</a>
+                            {% endif %}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+function addDiagnosisRow() {
+    const container = document.getElementById('diagnoses-formset');
+    const newRow = document.createElement('div');
+    newRow.className = 'row mb-2 diagnosis-row';
+    newRow.innerHTML = `
+        <div class="col-md-3">
+            <input type="text" name="icd10_code" class="form-control" placeholder="e.g., I10">
+        </div>
+        <div class="col-md-7">
+            <input type="text" name="diagnosis_description" class="form-control" placeholder="Diagnosis description">
+        </div>
+        <div class="col-md-2">
+            <input type="checkbox" name="is_primary" class="form-check-input" style="margin-top: 10px;">
+            <button type="button" class="btn btn-sm btn-danger ms-2" onclick="this.closest('.row').remove()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    `;
+    container.appendChild(newRow);
+}
+</script>
+{% endblock %}
+{% endblock %}

@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+
+{% block title %}My Profile - Hospital Records{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body text-center">
+                    {% if user.profile.profile_picture %}
+                        <img src="{{ user.profile.profile_picture.url }}" class="rounded-circle img-fluid mb-3" style="width: 150px; height: 150px; object-fit: cover;">
+                    {% else %}
+                        <div class="bg-secondary text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 150px; height: 150px; font-size: 48px;">
+                            <i class="fas fa-user"></i>
+                        </div>
+                    {% endif %}
+                    <h4>{{ user.get_full_name }}</h4>
+                    <p class="text-muted">{{ user.profile.get_user_type_display }}</p>
+                    <p class="text-muted">Employee ID: {{ user.profile.employee_id }}</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Profile Information</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-borderless">
+                        <tr>
+                            <th width="200">Username:</th>
+                            <td>{{ user.username }}</td>
+                        </tr>
+                        <tr>
+                            <th>Email:</th>
+                            <td>{{ user.email }}</td>
+                        </tr>
+                        <tr>
+                            <th>First Name:</th>
+                            <td>{{ user.first_name }}</td>
+                        </tr>
+                        <tr>
+                            <th>Last Name:</th>
+                            <td>{{ user.last_name }}</td>
+                        </tr>
+                        <tr>
+                            <th>Department:</th>
+                            <td>{{ user.profile.department }}</td>
+                        </tr>
+                        <tr>
+                            <th>Phone Number:</th>
+                            <td>{{ user.profile.phone_number }}</td>
+                        </tr>
+                        <tr>
+                            <th>Address:</th>
+                            <td>{{ user.profile.address|linebreaks }}</td>
+                        </tr>
+                        <tr>
+                            <th>Date Joined:</th>
+                            <td>{{ user.profile.date_joined|date:"F d, Y" }}</td>
+                        </tr>
+                    </table>
+                    
+                    <div class="mt-3">
+                        <a href="{% url 'accounts:edit_profile' %}" class="btn btn-primary">
+                            <i class="fas fa-edit me-2"></i>Edit Profile
+                        </a>
+                        <a href="{% url 'accounts:change_password' %}" class="btn btn-warning">
+                            <i class="fas fa-key me-2"></i>Change Password
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

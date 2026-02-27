@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}{{ title }} - Hospital Records{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">{{ title }}</h4>
+                </div>
+                <div class="card-body">
+                    <p class="mb-3">
+                        <strong>Patient:</strong> {{ record.patient.get_full_name }}<br>
+                        <strong>Record #:</strong> {{ record.record_number }}
+                    </p>
+                    
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-md-8">{{ form.medication_name|as_crispy_field }}</div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-3">{{ form.dosage|as_crispy_field }}</div>
+                            <div class="col-md-3">{{ form.dosage_unit|as_crispy_field }}</div>
+                            <div class="col-md-3">{{ form.frequency|as_crispy_field }}</div>
+                            <div class="col-md-3">{{ form.route|as_crispy_field }}</div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-4">{{ form.duration|as_crispy_field }}</div>
+                            <div class="col-md-4">{{ form.quantity|as_crispy_field }}</div>
+                            <div class="col-md-4">{{ form.refills|as_crispy_field }}</div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-12">{{ form.instructions|as_crispy_field }}</div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-4">{{ form.status|as_crispy_field }}</div>
+                        </div>
+                        
+                        <div class="mt-4">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>Save Prescription
+                            </button>
+                            <a href="{% url 'records:record_detail' record.pk %}" class="btn btn-secondary">
+                                Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

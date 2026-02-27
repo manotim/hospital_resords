@@ -1,0 +1,182 @@
+{% extends 'base.html' %}
+
+{% block title %}Lab Order Details - {{ lab_order.test_name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-md-8">
+            <!-- Lab Order Information -->
+            <div class="card mb-4">
+                <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">
+                        <i class="fas fa-flask me-2"></i>Lab Order: {{ lab_order.test_name }}
+                    </h4>
+                    <span class="badge bg-{% if lab_order.priority == 'stat' %}danger{% elif lab_order.priority == 'urgent' %}warning{% else %}info{% endif %}">
+                        {{ lab_order.get_priority_display }}
+                    </span>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <table class="table table-borderless">
+                                <tr>
+                                    <th>Patient:</th>
+                                    <td>
+                                        <a href="{% url 'patients:patient_detail' lab_order.medical_record.patient.pk %}">
+                                            {{ lab_order.medical_record.patient.get_full_name }}
+                                        </a>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>Test Code:</th>
+                                    <td>{{ lab_order.test_code }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Ordered By:</th>
+                                    <td>Dr. {{ lab_order.ordered_by.get_full_name }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <table class="table table-borderless">
+                                <tr>
+                                    <th>Ordered Date:</th>
+                                    <td>{{ lab_order.ordered_date|date:"F d, Y H:i" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Specimen Type:</th>
+                                    <td>{{ lab_order.specimen_type|default:"Not specified" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Status:</th>
+                                    <td>
+                                        <span class="badge bg-{% if lab_order.status == 'completed' %}success{% elif lab_order.status == 'in_progress' %}warning{% else %}secondary{% endif %}">
+                                            {{ lab_order.get_status_display }}
+                                        </span>
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    {% if lab_order.clinical_notes %}
+                        <div class="mt-3">
+                            <h6>Clinical Notes:</h6>
+                            {{ lab_order.clinical_notes|linebreaks }}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Lab Result -->
+            {% if lab_order.result %}
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="fas fa-file-medical me-2"></i>Lab Result</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="card bg-light">
+                                <div class="card-body text-center">
+                                    <h3 class="{% if lab_order.result.is_abnormal %}text-danger{% endif %}">
+                                        {{ lab_order.result.result_value }}
+                                    </h3>
+                                    <p class="mb-0">Result Value</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card bg-light">
+                                <div class="card-body text-center">
+                                    <h5>{{ lab_order.result.reference_range }}</h5>
+                                    <p class="mb-0">Reference Range</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card bg-light">
+                                <div class="card-body text-center">
+                                    <h5>{{ lab_order.result.unit }}</h5>
+                                    <p class="mb-0">Unit</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <table class="table table-borderless">
+                            <tr>
+                                <th>Performed By:</th>
+                                <td>{{ lab_order.result.performed_by.get_full_name }}</td>
+                                <th>Performed Date:</th>
+                                <td>{{ lab_order.result.performed_date|date:"F d, Y H:i" }}</td>
+                            </tr>
+                            {% if lab_order.result.verified_by %}
+                            <tr>
+                                <th>Verified By:</th>
+                                <td>{{ lab_order.result.verified_by.get_full_name }}</td>
+                                <th>Verified Date:</th>
+                                <td>{{ lab_order.result.verified_date|date:"F d, Y H:i" }}</td>
+                            </tr>
+                            {% endif %}
+                        </table>
+                        
+                        {% if lab_order.result.notes %}
+                            <div class="mt-3">
+                                <h6>Notes:</h6>
+                                {{ lab_order.result.notes|linebreaks }}
+                            </div>
+                        {% endif %}
+                        
+                        {% if lab_order.result.result_file %}
+                            <div class="mt-3">
+                                <a href="{{ lab_order.result.result_file.url }}" class="btn btn-sm btn-primary" target="_blank">
+                                    <i class="fas fa-download me-1"></i>Download Result File
+                                </a>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="card">
+                <div class="card-body text-center">
+                    <p class="mb-3">No result has been added yet.</p>
+                    {% if lab_order.status != 'completed' %}
+                        <a href="{% url 'records:add_lab_result' lab_order.pk %}" class="btn btn-success">
+                            <i class="fas fa-plus me-2"></i>Add Result
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- Sidebar -->
+        <div class="col-md-4">
+            <div class="card mb-3">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Actions</h5>
+                </div>
+                <div class="card-body">
+                    {% if not lab_order.result and lab_order.status != 'completed' %}
+                        <a href="{% url 'records:add_lab_result' lab_order.pk %}" class="btn btn-success w-100 mb-2">
+                            <i class="fas fa-flask me-2"></i>Add Result
+                        </a>
+                    {% endif %}
+                    {% if lab_order.result and not lab_order.result.verified_by %}
+                        <a href="{% url 'records:verify_lab_result' lab_order.result.pk %}" class="btn btn-warning w-100 mb-2">
+                            <i class="fas fa-check-circle me-2"></i>Verify Result
+                        </a>
+                    {% endif %}
+                    <a href="{% url 'records:record_detail' lab_order.medical_record.pk %}" class="btn btn-info w-100">
+                        <i class="fas fa-arrow-left me-2"></i>Back to Record
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

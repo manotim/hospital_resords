@@ -1,0 +1,106 @@
+{% extends 'base.html' %}
+
+{% block title %}Medical Records - Hospital Records{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Medical Records</h2>
+        <div>
+            <span class="badge bg-primary me-2">Total: {{ total_records }}</span>
+            <span class="badge bg-success">Today: {{ today_records }}</span>
+        </div>
+    </div>
+    
+    <!-- Search and Filter -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-4">
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-search"></i></span>
+                        <input type="text" name="q" class="form-control" placeholder="Search by patient name, ID, record #, or complaint..." value="{{ query }}">
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <select name="type" class="form-select">
+                        <option value="">All Types</option>
+                        <option value="consultation" {% if record_type == 'consultation' %}selected{% endif %}>Consultation</option>
+                        <option value="follow_up" {% if record_type == 'follow_up' %}selected{% endif %}>Follow Up</option>
+                        <option value="emergency" {% if record_type == 'emergency' %}selected{% endif %}>Emergency</option>
+                        <option value="routine_check" {% if record_type == 'routine_check' %}selected{% endif %}>Routine Check</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <input type="date" name="date_from" class="form-control" placeholder="From Date" value="{{ date_from }}">
+                </div>
+                <div class="col-md-2">
+                    <input type="date" name="date_to" class="form-control" placeholder="To Date" value="{{ date_to }}">
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-filter me-2"></i>Filter
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Records List -->
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Medical Records</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Record #</th>
+                            <th>Patient</th>
+                            <th>Patient ID</th>
+                            <th>Doctor</th>
+                            <th>Type</th>
+                            <th>Date</th>
+                            <th>Chief Complaint</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for record in records %}
+                        <tr>
+                            <td><strong>{{ record.record_number }}</strong></td>
+                            <td>{{ record.patient.get_full_name }}</td>
+                            <td>{{ record.patient.patient_id }}</td>
+                            <td>Dr. {{ record.doctor.get_full_name }}</td>
+                            <td>
+                                <span class="badge bg-info">{{ record.get_record_type_display }}</span>
+                            </td>
+                            <td>{{ record.visit_date|date:"Y-m-d H:i" }}</td>
+                            <td>{{ record.chief_complaint|truncatechars:50 }}</td>
+                            <td>
+                                <div class="btn-group" role="group">
+                                    <a href="{% url 'records:record_detail' record.pk %}" class="btn btn-sm btn-info" title="View">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{% url 'records:edit_record' record.pk %}" class="btn btn-sm btn-warning" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a href="{% url 'records:print_record' record.pk %}" class="btn btn-sm btn-secondary" title="Print" target="_blank">
+                                        <i class="fas fa-print"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="8" class="text-center">No medical records found</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

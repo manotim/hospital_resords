@@ -1,0 +1,373 @@
+{% extends 'base.html' %}
+
+{% block title %}Medical Record Details - {{ record.record_number }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Record Header -->
+    <div class="row mb-4">
+        <div class="col">
+            <div class="card">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">
+                        <i class="fas fa-notes-medical me-2"></i>Medical Record: {{ record.record_number }}
+                    </h4>
+                    <div>
+                        <a href="{% url 'records:edit_record' record.pk %}" class="btn btn-sm btn-warning me-2">
+                            <i class="fas fa-edit me-1"></i>Edit
+                        </a>
+                        <a href="{% url 'records:print_record' record.pk %}" class="btn btn-sm btn-secondary" target="_blank">
+                            <i class="fas fa-print me-1"></i>Print
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <table class="table table-borderless">
+                                <tr>
+                                    <th width="150">Patient:</th>
+                                    <td>
+                                        <a href="{% url 'patients:patient_detail' record.patient.pk %}">
+                                            {{ record.patient.get_full_name }}
+                                        </a>
+                                        ({{ record.patient.patient_id }})
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>Doctor:</th>
+                                    <td>Dr. {{ record.doctor.get_full_name }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Record Type:</th>
+                                    <td><span class="badge bg-info">{{ record.get_record_type_display }}</span></td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <table class="table table-borderless">
+                                <tr>
+                                    <th width="150">Visit Date:</th>
+                                    <td>{{ record.visit_date|date:"F d, Y H:i" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Follow-up Date:</th>
+                                    <td>
+                                        {% if record.follow_up_date %}
+                                            {{ record.follow_up_date|date:"F d, Y" }}
+                                        {% else %}
+                                            Not scheduled
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>Status:</th>
+                                    <td>
+                                        {% if record.is_active %}
+                                            <span class="badge bg-success">Active</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Inactive</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Chief Complaint and History -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="fas fa-comment-medical me-2"></i>Chief Complaint</h5>
+                </div>
+                <div class="card-body">
+                    {{ record.chief_complaint|linebreaks }}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="fas fa-history me-2"></i>History of Present Illness</h5>
+                </div>
+                <div class="card-body">
+                    {{ record.history_of_present_illness|linebreaks }}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Review of Systems and Physical Exam -->
+    <div class="row mb-4">
+        <div class="col-md-5">
+            <div class="card h-100">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0"><i class="fas fa-list-check me-2"></i>Review of Systems</h5>
+                </div>
+                <div class="card-body">
+                    {{ record.review_of_systems|default:"Not documented"|linebreaks }}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-7">
+            <div class="card h-100">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0"><i class="fas fa-stethoscope me-2"></i>Physical Examination</h5>
+                </div>
+                <div class="card-body">
+                    {{ record.physical_exam|default:"Not documented"|linebreaks }}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Diagnoses -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-warning">
+                    <h5 class="mb-0"><i class="fas fa-diagnoses me-2"></i>Diagnoses</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>ICD-10 Code</th>
+                                    <th>Description</th>
+                                    <th>Status</th>
+                                    <th>Primary</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for diagnosis in diagnoses %}
+                                <tr>
+                                    <td><strong>{{ diagnosis.icd10_code }}</strong></td>
+                                    <td>{{ diagnosis.description }}</td>
+                                    <td>
+                                        <span class="badge bg-{% if diagnosis.status == 'active' %}success{% elif diagnosis.status == 'chronic' %}warning{% else %}secondary{% endif %}">
+                                            {{ diagnosis.get_status_display }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if diagnosis.is_primary %}
+                                            <i class="fas fa-check-circle text-success"></i>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="4" class="text-center">No diagnoses recorded</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Assessment and Plan -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="fas fa-clipboard-check me-2"></i>Assessment</h5>
+                </div>
+                <div class="card-body">
+                    {{ record.assessment|linebreaks }}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="fas fa-tasks me-2"></i>Plan</h5>
+                </div>
+                <div class="card-body">
+                    {{ record.plan|linebreaks }}
+                    
+                    {% if record.follow_up_instructions %}
+                        <hr>
+                        <h6>Follow-up Instructions:</h6>
+                        {{ record.follow_up_instructions|linebreaks }}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Prescriptions -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-prescription me-2"></i>Prescriptions</h5>
+                    <a href="{% url 'records:add_prescription' record.pk %}" class="btn btn-sm btn-light">
+                        <i class="fas fa-plus me-1"></i>Add Prescription
+                    </a>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Medication</th>
+                                    <th>Dosage</th>
+                                    <th>Frequency</th>
+                                    <th>Route</th>
+                                    <th>Quantity</th>
+                                    <th>Refills</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for prescription in prescriptions %}
+                                <tr>
+                                    <td>{{ prescription.medication_name }}</td>
+                                    <td>{{ prescription.dosage }} {{ prescription.dosage_unit }}</td>
+                                    <td>{{ prescription.get_frequency_display }}</td>
+                                    <td>{{ prescription.route }}</td>
+                                    <td>{{ prescription.quantity }}</td>
+                                    <td>{{ prescription.refills }}</td>
+                                    <td>
+                                        <span class="badge bg-{% if prescription.status == 'active' %}success{% elif prescription.status == 'completed' %}info{% else %}secondary{% endif %}">
+                                            {{ prescription.get_status_display }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'records:edit_prescription' prescription.pk %}" class="btn btn-sm btn-warning">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <a href="{% url 'records:delete_prescription' prescription.pk %}" class="btn btn-sm btn-danger">
+                                            <i class="fas fa-trash"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="8" class="text-center">No prescriptions</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Lab Orders -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-flask me-2"></i>Laboratory Orders</h5>
+                    <a href="{% url 'records:order_lab' record.pk %}" class="btn btn-sm btn-light">
+                        <i class="fas fa-plus me-1"></i>Order Lab Test
+                    </a>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Test Name</th>
+                                    <th>Priority</th>
+                                    <th>Ordered Date</th>
+                                    <th>Status</th>
+                                    <th>Result</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for lab in lab_orders %}
+                                <tr>
+                                    <td>{{ lab.test_name }}</td>
+                                    <td>
+                                        <span class="badge bg-{% if lab.priority == 'stat' %}danger{% elif lab.priority == 'urgent' %}warning{% else %}info{% endif %}">
+                                            {{ lab.get_priority_display }}
+                                        </span>
+                                    </td>
+                                    <td>{{ lab.ordered_date|date:"Y-m-d H:i" }}</td>
+                                    <td>
+                                        <span class="badge bg-{% if lab.status == 'completed' %}success{% elif lab.status == 'in_progress' %}warning{% else %}secondary{% endif %}">
+                                            {{ lab.get_status_display }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if lab.result %}
+                                            {{ lab.result.result_value }} {{ lab.result.unit }}
+                                            {% if lab.result.is_abnormal %}
+                                                <i class="fas fa-exclamation-triangle text-danger" title="Abnormal"></i>
+                                            {% endif %}
+                                        {% else %}
+                                            Pending
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'records:lab_detail' lab.pk %}" class="btn btn-sm btn-info">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="6" class="text-center">No lab orders</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Clinical Notes -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-pen me-2"></i>Clinical Notes</h5>
+                    <a href="{% url 'records:add_clinical_note' record.pk %}" class="btn btn-sm btn-light">
+                        <i class="fas fa-plus me-1"></i>Add Note
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% for note in clinical_notes %}
+                    <div class="card mb-3 {% if note.is_private %}border-danger{% endif %}">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>{{ note.get_note_type_display }}</strong> by {{ note.author.get_full_name }}
+                                <span class="text-muted ms-2">{{ note.created_at|date:"Y-m-d H:i" }}</span>
+                            </div>
+                            <div>
+                                {% if note.is_private %}
+                                    <span class="badge bg-danger me-2">Private</span>
+                                {% endif %}
+                                <a href="{% url 'records:edit_clinical_note' note.pk %}" class="btn btn-sm btn-warning">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            {{ note.content|linebreaks }}
+                        </div>
+                    </div>
+                    {% empty %}
+                    <p class="text-center">No clinical notes</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

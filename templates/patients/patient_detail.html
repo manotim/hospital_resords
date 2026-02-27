@@ -1,0 +1,259 @@
+{% extends 'base.html' %}
+
+{% block title %}Patient Details - {{ patient.get_full_name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Patient Header -->
+    <div class="row mb-4">
+        <div class="col">
+            <div class="card">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">
+                        <i class="fas fa-user-injured me-2"></i>Patient Information
+                    </h4>
+                    <div>
+                        <span class="status-badge status-{{ patient.status }} me-2">
+                            {{ patient.get_status_display }}
+                        </span>
+                        {% if patient.status != 'active' %}
+                        <a href="{% url 'patients:admit_patient' patient.pk %}" class="btn btn-sm btn-success">
+                            <i class="fas fa-procedures me-1"></i>Admit Patient
+                        </a>
+                        {% endif %}
+                        <a href="{% url 'patients:patient_edit' patient.pk %}" class="btn btn-sm btn-warning">
+                            <i class="fas fa-edit me-1"></i>Edit
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <table class="table table-borderless">
+                                <tr>
+                                    <th width="150">Patient ID:</th>
+                                    <td><strong>{{ patient.patient_id }}</strong></td>
+                                </tr>
+                                <tr>
+                                    <th>Full Name:</th>
+                                    <td>{{ patient.get_full_name }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Date of Birth:</th>
+                                    <td>{{ patient.date_of_birth|date:"F d, Y" }} ({{ patient.age }} years)</td>
+                                </tr>
+                                <tr>
+                                    <th>Gender:</th>
+                                    <td>{{ patient.get_gender_display }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Blood Group:</th>
+                                    <td><span class="badge bg-danger">{{ patient.blood_group }}</span></td>
+                                </tr>
+                                <tr>
+                                    <th>Marital Status:</th>
+                                    <td>{{ patient.get_marital_status_display }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <table class="table table-borderless">
+                                <tr>
+                                    <th width="150">Phone:</th>
+                                    <td>{{ patient.phone_number }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Email:</th>
+                                    <td>{{ patient.email|default:"Not provided" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Address:</th>
+                                    <td>{{ patient.address }}, {{ patient.city }}, {{ patient.state }} {{ patient.zip_code }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Registration Date:</th>
+                                    <td>{{ patient.registration_date|date:"F d, Y" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Last Visit:</th>
+                                    <td>{{ patient.last_visit|date:"F d, Y"|default:"No visits yet" }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Emergency Contact -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0"><i class="fas fa-phone-alt me-2"></i>Emergency Contact</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-borderless">
+                        <tr>
+                            <th>Name:</th>
+                            <td>{{ patient.emergency_contact_name }}</td>
+                        </tr>
+                        <tr>
+                            <th>Phone:</th>
+                            <td>{{ patient.emergency_contact_phone }}</td>
+                        </tr>
+                        <tr>
+                            <th>Relation:</th>
+                            <td>{{ patient.emergency_contact_relation }}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Insurance Information -->
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="fas fa-shield-alt me-2"></i>Insurance Information</h5>
+                </div>
+                <div class="card-body">
+                    {% if patient.insurance_provider %}
+                    <table class="table table-borderless">
+                        <tr>
+                            <th>Provider:</th>
+                            <td>{{ patient.insurance_provider }}</td>
+                        </tr>
+                        <tr>
+                            <th>Policy Number:</th>
+                            <td>{{ patient.insurance_policy_number }}</td>
+                        </tr>
+                        <tr>
+                            <th>Group Number:</th>
+                            <td>{{ patient.insurance_group_number }}</td>
+                        </tr>
+                    </table>
+                    {% else %}
+                    <p class="text-muted mb-0">No insurance information on file</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Medical Information -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-header bg-warning">
+                    <h5 class="mb-0"><i class="fas fa-allergies me-2"></i>Allergies</h5>
+                </div>
+                <div class="card-body">
+                    {{ patient.allergies|default:"No known allergies"|linebreaks }}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-header bg-warning">
+                    <h5 class="mb-0"><i class="fas fa-heartbeat me-2"></i>Chronic Conditions</h5>
+                </div>
+                <div class="card-body">
+                    {{ patient.chronic_conditions|default:"No chronic conditions"|linebreaks }}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-header bg-warning">
+                    <h5 class="mb-0"><i class="fas fa-pills me-2"></i>Current Medications</h5>
+                </div>
+                <div class="card-body">
+                    {{ patient.current_medications|default:"No current medications"|linebreaks }}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Vitals and Admissions -->
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-heart me-2"></i>Recent Vital Signs</h5>
+                    <a href="{% url 'patients:add_vitals' patient.pk %}" class="btn btn-sm btn-light">
+                        <i class="fas fa-plus me-1"></i>Add Vitals
+                    </a>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>BP</th>
+                                    <th>HR</th>
+                                    <th>Temp</th>
+                                    <th>SpO2</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for vital in vitals %}
+                                <tr>
+                                    <td>{{ vital.recorded_at|date:"Y-m-d H:i" }}</td>
+                                    <td>{{ vital.blood_pressure_systolic }}/{{ vital.blood_pressure_diastolic }}</td>
+                                    <td>{{ vital.heart_rate }}</td>
+                                    <td>{{ vital.temperature }}°F</td>
+                                    <td>{{ vital.oxygen_saturation }}%</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center">No vital signs recorded</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-history me-2"></i>Admission History</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Admission Date</th>
+                                    <th>Department</th>
+                                    <th>Doctor</th>
+                                    <th>Discharge Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for admission in admissions %}
+                                <tr>
+                                    <td>{{ admission.admission_date|date:"Y-m-d" }}</td>
+                                    <td>{{ admission.department }}</td>
+                                    <td>Dr. {{ admission.admitting_doctor.get_full_name }}</td>
+                                    <td>{{ admission.discharge_date|date:"Y-m-d"|default:"Active" }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="4" class="text-center">No admission history</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

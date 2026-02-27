@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}{{ title }} - Hospital Records{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h4 class="mb-0">{{ title }}</h4>
+                </div>
+                <div class="card-body">
+                    <p class="mb-3">
+                        <strong>Patient:</strong> {{ record.patient.get_full_name }}<br>
+                        <strong>Record #:</strong> {{ record.record_number }}
+                    </p>
+                    
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-md-6">{{ form.test_name|as_crispy_field }}</div>
+                            <div class="col-md-6">{{ form.test_code|as_crispy_field }}</div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-4">{{ form.priority|as_crispy_field }}</div>
+                            <div class="col-md-4">{{ form.specimen_type|as_crispy_field }}</div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-12">{{ form.clinical_notes|as_crispy_field }}</div>
+                        </div>
+                        
+                        <div class="mt-4">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>Order Lab Test
+                            </button>
+                            <a href="{% url 'records:record_detail' record.pk %}" class="btn btn-secondary">
+                                Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
