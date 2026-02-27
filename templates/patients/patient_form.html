@@ -1,36 +1,38 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}{{ title }}{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
+<div class="container-fluid py-2 compact-mode">
     <div class="row">
         <div class="col-12">
             <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">{{ title }}</h3>
+                <div class="card-header bg-primary text-white py-2">
+                    <h4 class="mb-0 fs-5">{{ title }}</h4>
                 </div>
-                <div class="card-body">
+                <div class="card-body py-3">
                     {% if form.errors %}
-                <div class="alert alert-danger">
-                    <strong>Please correct the following errors:</strong>
-                    <ul>
-                        {% for field in form %}
-                            {% for error in field.errors %}
-                                <li>{{ field.label }}: {{ error }}</li>
+                    <div class="alert alert-danger py-2 mb-3">
+                        <strong class="small">Please correct the following errors:</strong>
+                        <ul class="mb-0 small">
+                            {% for field in form %}
+                                {% for error in field.errors %}
+                                    <li><strong>{{ field.label }}:</strong> {{ error }}</li>
+                                {% endfor %}
                             {% endfor %}
-                        {% endfor %}
-                        {% for error in form.non_field_errors %}
-                            <li>{{ error }}</li>
-                        {% endfor %}
-                    </ul>
-                </div>
-                {% endif %}
+                            {% for error in form.non_field_errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+                    
                     <form method="post" novalidate>
                         {% csrf_token %}
                         
                         {% if form.non_field_errors %}
-                        <div class="alert alert-danger">
+                        <div class="alert alert-danger py-2 mb-3">
                             {% for error in form.non_field_errors %}
                                 {{ error }}
                             {% endfor %}
@@ -38,283 +40,186 @@
                         {% endif %}
 
                         <!-- Personal Information Section -->
-                        <div class="card mb-3">
-                            <div class="card-header bg-light">
-                                <h5 class="mb-0">Personal Information</h5>
+                        <div class="card mb-2">
+                            <div class="card-header bg-light py-2">
+                                <h5 class="mb-0 fs-6">
+                                    <i class="fas fa-user me-2"></i>Personal Information
+                                </h5>
                             </div>
-                            <div class="card-body">
-                                <div class="row">
-                                    <div class="col-md-4 mb-3">
-                                        <label for="{{ form.first_name.id_for_label }}" class="form-label">First Name *</label>
+                            <div class="card-body py-2">
+                                <div class="row g-2">
+                                    <div class="col-md-4">
+                                        <label class="form-label mb-1">First Name <span class="text-danger">*</span></label>
                                         {{ form.first_name }}
-                                        {% if form.first_name.errors %}
-                                        <div class="invalid-feedback d-block">
-                                            {{ form.first_name.errors }}
-                                        </div>
-                                        {% endif %}
                                     </div>
-                                    <div class="col-md-4 mb-3">
-                                        <label for="{{ form.last_name.id_for_label }}" class="form-label">Last Name *</label>
+                                    <div class="col-md-4">
+                                        <label class="form-label mb-1">Last Name <span class="text-danger">*</span></label>
                                         {{ form.last_name }}
-                                        {% if form.last_name.errors %}
-                                        <div class="invalid-feedback d-block">
-                                            {{ form.last_name.errors }}
-                                        </div>
-                                        {% endif %}
                                     </div>
-                                    <div class="col-md-4 mb-3">
-                                        <label for="{{ form.date_of_birth.id_for_label }}" class="form-label">Date of Birth *</label>
+                                    <div class="col-md-4">
+                                        <label class="form-label mb-1">Date of Birth <span class="text-danger">*</span></label>
                                         {{ form.date_of_birth }}
-                                        {% if form.date_of_birth.help_text %}
-                                        <small class="form-text text-muted">{{ form.date_of_birth.help_text }}</small>
-                                        {% endif %}
-                                        {% if form.date_of_birth.errors %}
-                                        <div class="invalid-feedback d-block">
-                                            {{ form.date_of_birth.errors }}
-                                        </div>
-                                        {% endif %}
                                     </div>
                                 </div>
 
-                                <div class="row">
-                                    <div class="col-md-4 mb-3">
-                                        <label for="{{ form.gender.id_for_label }}" class="form-label">Gender *</label>
+                                <div class="row g-2 mt-1">
+                                    <div class="col-md-4">
+                                        <label class="form-label mb-1">Gender <span class="text-danger">*</span></label>
                                         {{ form.gender }}
-                                        {% if form.gender.errors %}
-                                        <div class="invalid-feedback d-block">
-                                            {{ form.gender.errors }}
-                                        </div>
-                                        {% endif %}
                                     </div>
-                                    <div class="col-md-4 mb-3">
-                                        <label for="{{ form.blood_group.id_for_label }}" class="form-label">Blood Group *</label>
+                                    <div class="col-md-4">
+                                        <label class="form-label mb-1">Blood Group</label>
                                         {{ form.blood_group }}
-                                        {% if form.blood_group.errors %}
-                                        <div class="invalid-feedback d-block">
-                                            {{ form.blood_group.errors }}
-                                        </div>
-                                        {% endif %}
                                     </div>
-                                    <div class="col-md-4 mb-3">
-                                        <label for="{{ form.marital_status.id_for_label }}" class="form-label">Marital Status *</label>
+                                    <div class="col-md-4">
+                                        <label class="form-label mb-1">Marital Status</label>
                                         {{ form.marital_status }}
-                                        {% if form.marital_status.errors %}
-                                        <div class="invalid-feedback d-block">
-                                            {{ form.marital_status.errors }}
-                                        </div>
-                                        {% endif %}
                                     </div>
                                 </div>
-                            <div class="row">
-                            <div class="col-md-4 mb-3">
-                                <label for="{{ form.status.id_for_label }}" class="form-label">Patient Status *</label>
-                                {{ form.status }}
-                                {% if form.status.errors %}
-                                <div class="invalid-feedback d-block">
-                                    {{ form.status.errors }}
+                                
+                                <div class="row g-2 mt-1">
+                                    <div class="col-md-4">
+                                        <label class="form-label mb-1">Patient Status</label>
+                                        {{ form.status }}
+                                    </div>
                                 </div>
-                                {% endif %}
-                            </div>
-                        </div>
                             </div>
                         </div>
 
                         <!-- Contact Information Section -->
-                        <div class="card mb-3">
-                            <div class="card-header bg-light">
-                                <h5 class="mb-0">Contact Information</h5>
+                        <div class="card mb-2">
+                            <div class="card-header bg-light py-2">
+                                <h5 class="mb-0 fs-6">
+                                    <i class="fas fa-address-book me-2"></i>Contact Information
+                                </h5>
                             </div>
-                            <div class="card-body">
-                                <div class="row">
-                                    <div class="col-md-6 mb-3">
-                                        <label for="{{ form.phone_number.id_for_label }}" class="form-label">Phone Number *</label>
+                            <div class="card-body py-2">
+                                <div class="row g-2">
+                                    <div class="col-md-6">
+                                        <label class="form-label mb-1">Phone Number <span class="text-danger">*</span></label>
                                         {{ form.phone_number }}
-                                        {% if form.phone_number.errors %}
-                                        <div class="invalid-feedback d-block">
-                                            {{ form.phone_number.errors }}
-                                        </div>
-                                        {% endif %}
                                     </div>
-                                    <div class="col-md-6 mb-3">
-                                        <label for="{{ form.email.id_for_label }}" class="form-label">Email</label>
+                                    <div class="col-md-6">
+                                        <label class="form-label mb-1">Email</label>
                                         {{ form.email }}
-                                        {% if form.email.errors %}
-                                        <div class="invalid-feedback d-block">
-                                            {{ form.email.errors }}
-                                        </div>
-                                        {% endif %}
                                     </div>
                                 </div>
 
-                                <div class="mb-3">
-                                    <label for="{{ form.address.id_for_label }}" class="form-label">Address *</label>
+                                <div class="mt-2">
+                                    <label class="form-label mb-1">Address <span class="text-danger">*</span></label>
                                     {{ form.address }}
-                                    {% if form.address.errors %}
-                                    <div class="invalid-feedback d-block">
-                                        {{ form.address.errors }}
-                                    </div>
-                                    {% endif %}
                                 </div>
 
-                                <div class="row">
-                                    <div class="col-md-4 mb-3">
-                                        <label for="{{ form.city.id_for_label }}" class="form-label">City *</label>
+                                <div class="row g-2 mt-2">
+                                    <div class="col-md-4">
+                                        <label class="form-label mb-1">City <span class="text-danger">*</span></label>
                                         {{ form.city }}
-                                        {% if form.city.errors %}
-                                        <div class="invalid-feedback d-block">
-                                            {{ form.city.errors }}
-                                        </div>
-                                        {% endif %}
                                     </div>
-                                    <div class="col-md-4 mb-3">
-                                        <label for="{{ form.state.id_for_label }}" class="form-label">State *</label>
+                                    <div class="col-md-4">
+                                        <label class="form-label mb-1">State <span class="text-danger">*</span></label>
                                         {{ form.state }}
-                                        {% if form.state.errors %}
-                                        <div class="invalid-feedback d-block">
-                                            {{ form.state.errors }}
-                                        </div>
-                                        {% endif %}
                                     </div>
-                                    <div class="col-md-4 mb-3">
-                                        <label for="{{ form.zip_code.id_for_label }}" class="form-label">ZIP Code *</label>
+                                    <div class="col-md-4">
+                                        <label class="form-label mb-1">ZIP Code <span class="text-danger">*</span></label>
                                         {{ form.zip_code }}
-                                        {% if form.zip_code.errors %}
-                                        <div class="invalid-feedback d-block">
-                                            {{ form.zip_code.errors }}
-                                        </div>
-                                        {% endif %}
                                     </div>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Emergency Contact Section -->
-                        <div class="card mb-3">
-                            <div class="card-header bg-light">
-                                <h5 class="mb-0">Emergency Contact</h5>
+                        <div class="card mb-2">
+                            <div class="card-header bg-light py-2">
+                                <h5 class="mb-0 fs-6">
+                                    <i class="fas fa-phone-alt me-2"></i>Emergency Contact
+                                </h5>
                             </div>
-                            <div class="card-body">
-                                <div class="row">
-                                    <div class="col-md-4 mb-3">
-                                        <label for="{{ form.emergency_contact_name.id_for_label }}" class="form-label">Contact Name *</label>
+                            <div class="card-body py-2">
+                                <div class="row g-2">
+                                    <div class="col-md-4">
+                                        <label class="form-label mb-1">Contact Name <span class="text-danger">*</span></label>
                                         {{ form.emergency_contact_name }}
-                                        {% if form.emergency_contact_name.errors %}
-                                        <div class="invalid-feedback d-block">
-                                            {{ form.emergency_contact_name.errors }}
-                                        </div>
-                                        {% endif %}
                                     </div>
-                                    <div class="col-md-4 mb-3">
-                                        <label for="{{ form.emergency_contact_phone.id_for_label }}" class="form-label">Contact Phone *</label>
+                                    <div class="col-md-4">
+                                        <label class="form-label mb-1">Contact Phone <span class="text-danger">*</span></label>
                                         {{ form.emergency_contact_phone }}
-                                        {% if form.emergency_contact_phone.errors %}
-                                        <div class="invalid-feedback d-block">
-                                            {{ form.emergency_contact_phone.errors }}
-                                        </div>
-                                        {% endif %}
                                     </div>
-                                    <div class="col-md-4 mb-3">
-                                        <label for="{{ form.emergency_contact_relation.id_for_label }}" class="form-label">Relation *</label>
+                                    <div class="col-md-4">
+                                        <label class="form-label mb-1">Relation <span class="text-danger">*</span></label>
                                         {{ form.emergency_contact_relation }}
-                                        {% if form.emergency_contact_relation.errors %}
-                                        <div class="invalid-feedback d-block">
-                                            {{ form.emergency_contact_relation.errors }}
-                                        </div>
-                                        {% endif %}
                                     </div>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Medical Information Section -->
-                        <div class="card mb-3">
-                            <div class="card-header bg-light">
-                                <h5 class="mb-0">Medical Information</h5>
+                        <div class="card mb-2">
+                            <div class="card-header bg-light py-2">
+                                <h5 class="mb-0 fs-6">
+                                    <i class="fas fa-notes-medical me-2"></i>Medical Information
+                                </h5>
                             </div>
-                            <div class="card-body">
-                                <div class="mb-3">
-                                    <label for="{{ form.allergies.id_for_label }}" class="form-label">Allergies</label>
+                            <div class="card-body py-2">
+                                <div class="mb-2">
+                                    <label class="form-label mb-1">Allergies</label>
                                     {{ form.allergies }}
-                                    {% if form.allergies.errors %}
-                                    <div class="invalid-feedback d-block">
-                                        {{ form.allergies.errors }}
-                                    </div>
-                                    {% endif %}
                                 </div>
 
-                                <div class="mb-3">
-                                    <label for="{{ form.chronic_conditions.id_for_label }}" class="form-label">Chronic Conditions</label>
+                                <div class="mb-2">
+                                    <label class="form-label mb-1">Chronic Conditions</label>
                                     {{ form.chronic_conditions }}
-                                    {% if form.chronic_conditions.errors %}
-                                    <div class="invalid-feedback d-block">
-                                        {{ form.chronic_conditions.errors }}
-                                    </div>
-                                    {% endif %}
                                 </div>
 
-                                <div class="mb-3">
-                                    <label for="{{ form.current_medications.id_for_label }}" class="form-label">Current Medications</label>
+                                <div class="mb-2">
+                                    <label class="form-label mb-1">Current Medications</label>
                                     {{ form.current_medications }}
-                                    {% if form.current_medications.errors %}
-                                    <div class="invalid-feedback d-block">
-                                        {{ form.current_medications.errors }}
-                                    </div>
-                                    {% endif %}
                                 </div>
 
-                                <div class="mb-3">
-                                    <label for="{{ form.primary_physician.id_for_label }}" class="form-label">Primary Physician</label>
+                                <div class="mb-2">
+                                    <label class="form-label mb-1">Primary Physician</label>
                                     {{ form.primary_physician }}
-                                    {% if form.primary_physician.errors %}
-                                    <div class="invalid-feedback d-block">
-                                        {{ form.primary_physician.errors }}
-                                    </div>
-                                    {% endif %}
                                 </div>
                             </div>
                         </div>
 
                         <!-- Insurance Information Section -->
-                        <div class="card mb-3">
-                            <div class="card-header bg-light">
-                                <h5 class="mb-0">Insurance Information</h5>
+                        <div class="card mb-2">
+                            <div class="card-header bg-light py-2">
+                                <h5 class="mb-0 fs-6">
+                                    <i class="fas fa-shield-alt me-2"></i>Insurance Information
+                                </h5>
                             </div>
-                            <div class="card-body">
-                                <div class="row">
-                                    <div class="col-md-4 mb-3">
-                                        <label for="{{ form.insurance_provider.id_for_label }}" class="form-label">Insurance Provider</label>
+                            <div class="card-body py-2">
+                                <div class="row g-2">
+                                    <div class="col-md-4">
+                                        <label class="form-label mb-1">Insurance Provider</label>
                                         {{ form.insurance_provider }}
-                                        {% if form.insurance_provider.errors %}
-                                        <div class="invalid-feedback d-block">
-                                            {{ form.insurance_provider.errors }}
-                                        </div>
-                                        {% endif %}
                                     </div>
-                                    <div class="col-md-4 mb-3">
-                                        <label for="{{ form.insurance_policy_number.id_for_label }}" class="form-label">Policy Number</label>
+                                    <div class="col-md-4">
+                                        <label class="form-label mb-1">Policy Number</label>
                                         {{ form.insurance_policy_number }}
-                                        {% if form.insurance_policy_number.errors %}
-                                        <div class="invalid-feedback d-block">
-                                            {{ form.insurance_policy_number.errors }}
-                                        </div>
-                                        {% endif %}
                                     </div>
-                                    <div class="col-md-4 mb-3">
-                                        <label for="{{ form.insurance_group_number.id_for_label }}" class="form-label">Group Number</label>
+                                    <div class="col-md-4">
+                                        <label class="form-label mb-1">Group Number</label>
                                         {{ form.insurance_group_number }}
-                                        {% if form.insurance_group_number.errors %}
-                                        <div class="invalid-feedback d-block">
-                                            {{ form.insurance_group_number.errors }}
-                                        </div>
-                                        {% endif %}
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="text-end">
-                            <a href="{% url 'patients:patient_list' %}" class="btn btn-secondary">Cancel</a>
-                            <button type="submit" class="btn btn-primary">Register Patient</button>
+                        <!-- Form Actions -->
+                        <div class="d-flex justify-content-end gap-2 mt-3">
+                            <a href="{% url 'patients:patient_list' %}" class="btn btn-sm btn-secondary px-3">
+                                <i class="fas fa-times me-1"></i>Cancel
+                            </a>
+                            <button type="submit" class="btn btn-sm btn-primary px-3">
+                                <i class="fas fa-save me-1"></i>
+                                {% if request.resolver_match.url_name == 'patient_add' %}
+                                    Register Patient
+                                {% else %}
+                                    Update Patient
+                                {% endif %}
+                            </button>
                         </div>
                     </form>
                 </div>
@@ -326,65 +231,281 @@
 
 {% block extra_css %}
 <style>
-    /* Add some custom styling for form fields */
-    .form-control, .form-select {
+    /* Compact mode styles - applied via container class */
+    .compact-mode {
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+    
+    /* Form field styling - increased font sizes while keeping compact layout */
+    .compact-mode .form-control,
+    .compact-mode .form-select,
+    .compact-mode input[type="date"] {
+        padding: 0.3rem 0.6rem !important;  /* Slightly increased from 0.25rem */
+        font-size: 1rem !important;  /* Increased from 0.9rem */
+        height: 38px !important;  /* Increased from 35px */
         border-radius: 0.25rem;
     }
     
-    .card-header {
-        background-color: #f8f9fa;
+    .compact-mode textarea {
+        padding: 0.3rem 0.6rem !important;  /* Slightly increased */
+        font-size: 1rem !important;  /* Increased from 0.9rem */
+        min-height: 60px !important;  /* Increased from 50px */
+        border-radius: 0.25rem;
     }
     
-    .invalid-feedback {
-        font-size: 0.875em;
-        color: #dc3545;
+    .compact-mode .form-label {
+        font-size: 0.95rem !important;  /* Increased from 0.85rem */
+        margin-bottom: 0.2rem !important;  /* Slightly increased */
+        font-weight: 500;
+        color: #495057;
     }
     
-    /* Style for date input */
-    input[type="date"] {
-        display: block;
-        width: 100%;
-        padding: 0.375rem 0.75rem;
-        font-size: 1rem;
-        font-weight: 400;
+    .compact-mode .card-body {
+        padding: 0.75rem !important;
+    }
+    
+    .compact-mode .card-header {
+        padding: 0.5rem 0.75rem !important;  /* Slightly increased */
+    }
+    
+    .compact-mode .card-header h5 {
+        font-size: 1rem !important;  /* Increased from 0.95rem */
+    }
+    
+    .compact-mode .card-header i {
+        font-size: 1rem;  /* Increased from 0.9rem */
+    }
+    
+    .compact-mode .btn-sm {
+        padding: 0.3rem 1.2rem !important;  /* Slightly increased */
+        font-size: 0.95rem !important;  /* Increased from 0.85rem */
         line-height: 1.5;
-        color: #212529;
-        background-color: #fff;
-        background-clip: padding-box;
-        border: 1px solid #ced4da;
-        appearance: none;
-        border-radius: 0.25rem;
-        transition: border-color .15s ease-in-out,box-shadow .15s ease-in-out;
     }
     
-    input[type="date"]:focus {
-        color: #212529;
-        background-color: #fff;
-        border-color: #86b7fe;
-        outline: 0;
-        box-shadow: 0 0 0 0.25rem rgba(13,110,253,.25);
+    .compact-mode .btn-sm i {
+        font-size: 0.95rem;  /* Match button text size */
     }
     
-    textarea {
-        resize: vertical;
-        min-height: 80px;
+    .compact-mode .row {
+        margin-left: -0.25rem;
+        margin-right: -0.25rem;
+    }
+    
+    .compact-mode .col-md-4,
+    .compact-mode .col-md-6 {
+        padding-left: 0.25rem;
+        padding-right: 0.25rem;
+    }
+    
+    /* Card styling */
+    .compact-mode .card {
+        margin-bottom: 0.75rem !important;
+        border-radius: 0.375rem;
+    }
+    
+    /* Alert styling */
+    .compact-mode .alert {
+        padding: 0.6rem 0.9rem;  /* Slightly increased */
+        margin-bottom: 0.75rem;
+        font-size: 0.95rem;  /* Increased from 0.85rem */
+    }
+    
+    .compact-mode .alert strong {
+        font-size: 1rem;  /* Slightly larger */
+    }
+    
+    .compact-mode .alert ul {
+        margin-top: 0.3rem;
+    }
+    
+    .compact-mode .alert li {
+        font-size: 0.95rem;  /* Increased from 0.85rem */
+    }
+    
+    /* Error styling */
+    .compact-mode .invalid-feedback {
+        font-size: 0.85rem;  /* Increased from 0.75rem */
+        margin-top: 0.15rem;
+    }
+    
+    /* Small text utility - adjusted */
+    .compact-mode .small {
+        font-size: 0.9rem !important;  /* Increased from 0.8rem */
+    }
+    
+    /* Button container */
+    .compact-mode .d-flex {
+        margin-top: 1rem !important;
+    }
+    
+    /* Focus states */
+    .compact-mode .form-control:focus,
+    .compact-mode .form-select:focus,
+    .compact-mode input[type="date"]:focus {
+        box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .compact-mode .container-fluid {
+            padding: 0.5rem !important;
+        }
+        
+        .compact-mode .btn-sm {
+            width: 100%;
+            margin-bottom: 0.25rem;
+            font-size: 1rem !important;  /* Slightly larger on mobile */
+            padding: 0.4rem !important;
+        }
+        
+        .compact-mode .d-flex {
+            flex-direction: column-reverse;
+            gap: 0.25rem !important;
+        }
+        
+        .compact-mode .d-flex .btn-sm {
+            margin-left: 0 !important;
+        }
+        
+        .compact-mode .row.g-2 > [class*="col-"] {
+            margin-bottom: 0.35rem;
+        }
+    }
+    
+    /* Optional: Make the form scrollable if still too tall */
+    @media (max-height: 800px) {
+        .compact-mode .card-body {
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+    }
+    
+    /* Hover effects */
+    .compact-mode .card:hover {
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    
+    /* Required field indicator */
+    .compact-mode .text-danger {
+        font-size: 1.1em;
+    }
+    
+    /* Placeholder text */
+    .compact-mode ::placeholder {
+        font-size: 0.95rem;  /* Increased from 0.85rem */
+        color: #adb5bd;
+    }
+    
+    /* Disabled state */
+    .compact-mode .form-control:disabled,
+    .compact-mode .form-select:disabled {
+        background-color: #e9ecef;
+        opacity: 1;
+    }
+    
+    /* Section headers */
+    .compact-mode .card-header h5 i {
+        margin-right: 0.5rem;
+        color: #0d6efd;
+    }
+    
+    /* Input group adjustments if needed */
+    .compact-mode .input-group-text {
+        font-size: 0.95rem;
+        padding: 0.3rem 0.6rem;
     }
 </style>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-    // Optional: Add any client-side validation or dynamic behavior
     document.addEventListener('DOMContentLoaded', function() {
-        // You can add custom JavaScript here if needed
-        // For example, auto-formatting phone numbers, validating dates, etc.
-        
-        // Example: Add confirmation before form submission
-        const form = document.querySelector('form');
-        form.addEventListener('submit', function(e) {
-            // Optional: Add any pre-submission validation or confirmation
-            console.log('Form is being submitted...');
+        // Auto-hide alerts after 5 seconds
+        const alerts = document.querySelectorAll('.alert');
+        alerts.forEach(function(alert) {
+            setTimeout(function() {
+                if (alert) {
+                    const bsAlert = new bootstrap.Alert(alert);
+                    bsAlert.close();
+                }
+            }, 5000);
         });
+
+        // Phone number formatting
+        const phoneInput = document.querySelector('[name="phone_number"]');
+        if (phoneInput) {
+            phoneInput.addEventListener('input', function(e) {
+                // Remove non-digits
+                let value = this.value.replace(/\D/g, '');
+                
+                // Format as (XXX) XXX-XXXX for US numbers
+                if (value.length > 10) {
+                    value = value.substring(0, 10);
+                }
+                
+                if (value.length > 6) {
+                    this.value = `(${value.substring(0,3)}) ${value.substring(3,6)}-${value.substring(6)}`;
+                } else if (value.length > 3) {
+                    this.value = `(${value.substring(0,3)}) ${value.substring(3)}`;
+                } else if (value.length > 0) {
+                    this.value = value;
+                }
+            });
+        }
+
+        // Form validation before submit
+        const form = document.querySelector('form');
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                const requiredFields = document.querySelectorAll('[required]');
+                let isValid = true;
+                let firstInvalid = null;
+                
+                requiredFields.forEach(function(field) {
+                    if (!field.value.trim()) {
+                        field.classList.add('is-invalid');
+                        isValid = false;
+                        if (!firstInvalid) firstInvalid = field;
+                    } else {
+                        field.classList.remove('is-invalid');
+                    }
+                });
+                
+                if (!isValid) {
+                    e.preventDefault();
+                    alert('Please fill in all required fields.');
+                    if (firstInvalid) {
+                        firstInvalid.focus();
+                    }
+                }
+            });
+        }
+
+        // Remove invalid class on input
+        const formControls = document.querySelectorAll('.form-control, .form-select');
+        formControls.forEach(function(control) {
+            control.addEventListener('input', function() {
+                this.classList.remove('is-invalid');
+            });
+            
+            // Add blur validation for required fields
+            if (control.hasAttribute('required')) {
+                control.addEventListener('blur', function() {
+                    if (!this.value.trim()) {
+                        this.classList.add('is-invalid');
+                    } else {
+                        this.classList.remove('is-invalid');
+                    }
+                });
+            }
+        });
+        
+        // Auto-focus first field
+        const firstField = document.querySelector('.form-control, .form-select');
+        if (firstField) {
+            firstField.focus();
+        }
     });
 </script>
 {% endblock %}

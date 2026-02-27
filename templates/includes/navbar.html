@@ -1,56 +1,296 @@
-<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+<!-- templates/includes/navbar.html -->
+<nav class="navbar navbar-expand-lg navbar-dark" style="background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); font-family: 'Segoe UI', Roboto, system-ui, -apple-system, 'Helvetica Neue', sans-serif;">
     <div class="container-fluid">
-        <a class="navbar-brand" href="{% url 'patients:dashboard' %}">
-            <i class="fas fa-hospital me-2"></i>City General Hospital
+        <a class="navbar-brand fw-bold fs-4" href="{% url 'patients:dashboard' %}">
+            <i class="fas fa-hospital-user me-2" style="color: #ffd700;"></i>Baringo County Rereral Hospital
         </a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
             <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav me-auto">
                 {% if user.is_authenticated %}
-                <li class="nav-item">
-                    <a class="nav-link" href="{% url 'patients:dashboard' %}">
-                        <i class="fas fa-home me-1"></i>Dashboard
+                <li class="nav-item mx-1">
+                    <a class="nav-link px-3 rounded-3 {% if request.resolver_match.url_name == 'dashboard' %}active bg-white bg-opacity-25{% endif %}" 
+                       href="{% url 'patients:dashboard' %}"
+                       style="font-size: 1.1rem; font-weight: 500; transition: all 0.3s;">
+                        <i class="fas fa-home me-2"></i>Dashboard
                     </a>
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="{% url 'patients:patient_list' %}">
-                        <i class="fas fa-users me-1"></i>Patients
+                <li class="nav-item mx-1">
+                    <a class="nav-link px-3 rounded-3 {% if request.resolver_match.url_name == 'patient_list' %}active bg-white bg-opacity-25{% endif %}" 
+                       href="{% url 'patients:patient_list' %}"
+                       style="font-size: 1.1rem; font-weight: 500; transition: all 0.3s;">
+                        <i class="fas fa-users me-2"></i>Patients
                     </a>
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="{% url 'records:record_list' %}">
-                        <i class="fas fa-notes-medical me-1"></i>Medical Records
+                
+                <!-- Medical Records Dropdown -->
+                <li class="nav-item dropdown mx-1">
+                    <a class="nav-link dropdown-toggle px-3 rounded-3 {% if request.resolver_match.app_name == 'records' %}active bg-white bg-opacity-25{% endif %}" 
+                       href="#" id="recordsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false"
+                       style="font-size: 1.1rem; font-weight: 500; transition: all 0.3s;">
+                        <i class="fas fa-notes-medical me-2"></i>Medical Records
                     </a>
+                    <ul class="dropdown-menu dropdown-menu-dark border-0 shadow-lg" 
+                        style="background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%); font-family: 'Segoe UI', system-ui; min-width: 280px; backdrop-filter: blur(10px);">
+                        <!-- Main Records -->
+                        <li>
+                            <a class="dropdown-item py-2 {% if request.resolver_match.url_name == 'record_list' %}active bg-white bg-opacity-25{% endif %}" 
+                               href="{% url 'records:record_list' %}"
+                               style="font-size: 1rem; font-weight: 400;">
+                                <i class="fas fa-list me-3" style="width: 20px;"></i>All Records
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item py-2" href="#" data-bs-toggle="modal" data-bs-target="#selectPatientModal"
+                               style="font-size: 1rem; font-weight: 400;">
+                                <i class="fas fa-plus-circle me-3" style="width: 20px;"></i>New Record
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider bg-light opacity-25"></li>
+                        
+                        <!-- Prescriptions Section -->
+                        <li><h6 class="dropdown-header text-white-50 fw-bold" style="font-size: 0.95rem;"><i class="fas fa-pills me-2"></i>Prescriptions</h6></li>
+                        <li>
+                            <a class="dropdown-item py-2" href="{% url 'records:record_list' %}?type=prescription"
+                               style="font-size: 1rem; font-weight: 400;">
+                                <i class="fas fa-list me-3" style="width: 20px;"></i>View All Prescriptions
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item py-2" href="#" onclick="return showRecordSelector('add_prescription')"
+                               style="font-size: 1rem; font-weight: 400;">
+                                <i class="fas fa-plus-circle me-3" style="width: 20px;"></i>Add to Existing Record
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item py-2" href="#" onclick="return showPatientSelector('create_and_prescribe')"
+                               style="font-size: 1rem; font-weight: 400;">
+                                <i class="fas fa-file-medical me-3" style="width: 20px;"></i>New Record with Prescription
+                            </a>
+                        </li>
+                        
+                        <li><hr class="dropdown-divider bg-light opacity-25"></li>
+                        
+                        <!-- Lab Section -->
+                        <li><h6 class="dropdown-header text-white-50 fw-bold" style="font-size: 0.95rem;"><i class="fas fa-flask me-2"></i>Laboratory</h6></li>
+                        <li>
+                            <a class="dropdown-item py-2" href="{% url 'records:record_list' %}?type=lab"
+                               style="font-size: 1rem; font-weight: 400;">
+                                <i class="fas fa-list me-3" style="width: 20px;"></i>View All Lab Orders
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item py-2" href="#" onclick="return showRecordSelector('order_lab')"
+                               style="font-size: 1rem; font-weight: 400;">
+                                <i class="fas fa-plus-circle me-3" style="width: 20px;"></i>Order Lab for Existing Record
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item py-2" href="#" onclick="return showPatientSelector('create_and_lab')"
+                               style="font-size: 1rem; font-weight: 400;">
+                                <i class="fas fa-file-medical me-3" style="width: 20px;"></i>New Record with Lab Order
+                            </a>
+                        </li>
+                        
+                        <li><hr class="dropdown-divider bg-light opacity-25"></li>
+                        
+                        <!-- Imaging Section -->
+                        <li><h6 class="dropdown-header text-white-50 fw-bold" style="font-size: 0.95rem;"><i class="fas fa-x-ray me-2"></i>Imaging</h6></li>
+                        <li>
+                            <a class="dropdown-item py-2" href="{% url 'records:record_list' %}?type=imaging"
+                               style="font-size: 1rem; font-weight: 400;">
+                                <i class="fas fa-list me-3" style="width: 20px;"></i>View All Imaging Orders
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item py-2" href="#" onclick="return showRecordSelector('order_imaging')"
+                               style="font-size: 1rem; font-weight: 400;">
+                                <i class="fas fa-plus-circle me-3" style="width: 20px;"></i>Order Imaging for Existing Record
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item py-2" href="#" onclick="return showPatientSelector('create_and_imaging')"
+                               style="font-size: 1rem; font-weight: 400;">
+                                <i class="fas fa-file-medical me-3" style="width: 20px;"></i>New Record with Imaging Order
+                            </a>
+                        </li>
+                        
+                        <li><hr class="dropdown-divider bg-light opacity-25"></li>
+                        
+                        <!-- Procedures Section -->
+                        <li><h6 class="dropdown-header text-white-50 fw-bold" style="font-size: 0.95rem;"><i class="fas fa-syringe me-2"></i>Procedures</h6></li>
+                        <li>
+                            <a class="dropdown-item py-2" href="{% url 'records:record_list' %}?type=procedure"
+                               style="font-size: 1rem; font-weight: 400;">
+                                <i class="fas fa-list me-3" style="width: 20px;"></i>View All Procedures
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item py-2" href="#" onclick="return showRecordSelector('add_procedure')"
+                               style="font-size: 1rem; font-weight: 400;">
+                                <i class="fas fa-plus-circle me-3" style="width: 20px;"></i>Add Procedure to Existing Record
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item py-2" href="#" onclick="return showPatientSelector('create_and_procedure')"
+                               style="font-size: 1rem; font-weight: 400;">
+                                <i class="fas fa-file-medical me-3" style="width: 20px;"></i>New Record with Procedure
+                            </a>
+                        </li>
+                        
+                        <li><hr class="dropdown-divider bg-light opacity-25"></li>
+                        
+                        <!-- Clinical Notes Section -->
+                        <li><h6 class="dropdown-header text-white-50 fw-bold" style="font-size: 0.95rem;"><i class="fas fa-pen me-2"></i>Clinical Notes</h6></li>
+                        <li>
+                            <a class="dropdown-item py-2" href="{% url 'records:record_list' %}?type=note"
+                               style="font-size: 1rem; font-weight: 400;">
+                                <i class="fas fa-list me-3" style="width: 20px;"></i>View All Clinical Notes
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item py-2" href="#" onclick="return showRecordSelector('add_clinical_note')"
+                               style="font-size: 1rem; font-weight: 400;">
+                                <i class="fas fa-plus-circle me-3" style="width: 20px;"></i>Add Note to Existing Record
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item py-2" href="#" onclick="return showPatientSelector('create_and_note')"
+                               style="font-size: 1rem; font-weight: 400;">
+                                <i class="fas fa-file-medical me-3" style="width: 20px;"></i>New Record with Note
+                            </a>
+                        </li>
+                    </ul>
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="#">
-                        <i class="fas fa-chart-bar me-1"></i>Reports
+                
+                <!-- Reports Dropdown -->
+                <li class="nav-item dropdown mx-1">
+                    <a class="nav-link dropdown-toggle px-3 rounded-3 {% if request.resolver_match.app_name == 'reports' %}active bg-white bg-opacity-25{% endif %}" 
+                       href="#" id="reportsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false"
+                       style="font-size: 1.1rem; font-weight: 500; transition: all 0.3s;">
+                        <i class="fas fa-chart-bar me-2"></i>Reports
                     </a>
+                    <ul class="dropdown-menu dropdown-menu-dark border-0 shadow-lg" 
+                        style="background: linear-gradient(135deg, #2c3e50 0%, #16a085 100%); font-family: 'Segoe UI', system-ui; min-width: 280px; backdrop-filter: blur(10px);">
+                        <!-- Dashboard -->
+                        <li>
+                            <a class="dropdown-item py-2 {% if request.resolver_match.url_name == 'dashboard' %}active bg-white bg-opacity-25{% endif %}" 
+                               href="{% url 'reports:dashboard' %}"
+                               style="font-size: 1rem; font-weight: 400;">
+                                <i class="fas fa-tachometer-alt me-3" style="width: 20px;"></i>Reports Dashboard
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item py-2" href="{% url 'reports:generate_report' %}"
+                               style="font-size: 1rem; font-weight: 400;">
+                                <i class="fas fa-plus-circle me-3" style="width: 20px;"></i>Generate New Report
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider bg-light opacity-25"></li>
+                        
+                        <!-- Clinical Reports -->
+                        <li><h6 class="dropdown-header text-white-50 fw-bold" style="font-size: 0.95rem;"><i class="fas fa-clinic-medical me-2"></i>Clinical Reports</h6></li>
+                        <li>
+                            <a class="dropdown-item py-2" href="{% url 'reports:patient_census' %}"
+                               style="font-size: 1rem; font-weight: 400;">
+                                <i class="fas fa-users me-3" style="width: 20px;"></i>Patient Census
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item py-2" href="{% url 'reports:diagnosis_frequency' %}"
+                               style="font-size: 1rem; font-weight: 400;">
+                                <i class="fas fa-diagnoses me-3" style="width: 20px;"></i>Diagnosis Frequency
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item py-2" href="{% url 'reports:prescription_analysis' %}"
+                               style="font-size: 1rem; font-weight: 400;">
+                                <i class="fas fa-pills me-3" style="width: 20px;"></i>Prescription Analysis
+                            </a>
+                        </li>
+                        
+                        <li><hr class="dropdown-divider bg-light opacity-25"></li>
+                        
+                        <!-- Laboratory Reports -->
+                        <li><h6 class="dropdown-header text-white-50 fw-bold" style="font-size: 0.95rem;"><i class="fas fa-flask me-2"></i>Laboratory Reports</h6></li>
+                        <li>
+                            <a class="dropdown-item py-2" href="{% url 'reports:lab_utilization' %}"
+                               style="font-size: 1rem; font-weight: 400;">
+                                <i class="fas fa-microscope me-3" style="width: 20px;"></i>Lab Utilization
+                            </a>
+                        </li>
+                        
+                        <li><hr class="dropdown-divider bg-light opacity-25"></li>
+                        
+                        <!-- Administrative Reports -->
+                        <li><h6 class="dropdown-header text-white-50 fw-bold" style="font-size: 0.95rem;"><i class="fas fa-building me-2"></i>Administrative</h6></li>
+                        <li>
+                            <a class="dropdown-item py-2" href="{% url 'reports:scheduled_reports' %}"
+                               style="font-size: 1rem; font-weight: 400;">
+                                <i class="fas fa-clock me-3" style="width: 20px;"></i>Scheduled Reports
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item py-2" href="{% url 'reports:create_schedule' %}"
+                               style="font-size: 1rem; font-weight: 400;">
+                                <i class="fas fa-calendar-plus me-3" style="width: 20px;"></i>Schedule New Report
+                            </a>
+                        </li>
+                        
+                        <li><hr class="dropdown-divider bg-light opacity-25"></li>
+                        
+                        <!-- Quick Stats -->
+                        <li><h6 class="dropdown-header text-white-50 fw-bold" style="font-size: 0.95rem;"><i class="fas fa-chart-line me-2"></i>Quick Stats</h6></li>
+                        <li>
+                            <a class="dropdown-item py-2" href="#" onclick="return showQuickStats('admissions')"
+                               style="font-size: 1rem; font-weight: 400;">
+                                <i class="fas fa-procedures me-3" style="width: 20px;"></i>Admissions Today
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item py-2" href="#" onclick="return showQuickStats('discharges')"
+                               style="font-size: 1rem; font-weight: 400;">
+                                <i class="fas fa-sign-out-alt me-3" style="width: 20px;"></i>Discharges Today
+                            </a>
+                        </li>
+                    </ul>
                 </li>
                 {% endif %}
             </ul>
             <ul class="navbar-nav">
                 {% if user.is_authenticated %}
-                <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
-                        <i class="fas fa-user-circle me-1"></i>{{ user.get_full_name|default:user.username }}
+                <li class="nav-item dropdown mx-1">
+                    <a class="nav-link dropdown-toggle px-3 rounded-3" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown"
+                       style="font-size: 1.1rem; font-weight: 500;">
+                        <i class="fas fa-user-circle me-2" style="font-size: 1.3rem;"></i>{{ user.get_full_name|default:user.username }}
                     </a>
-                    <ul class="dropdown-menu dropdown-menu-end">
-                        <li><a class="dropdown-item" href="{% url 'accounts:profile' %}">
-                            <i class="fas fa-id-card me-2"></i>Profile
-                        </a></li>
-                        <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item" href="{% url 'accounts:logout' %}">
-                            <i class="fas fa-sign-out-alt me-2"></i>Logout
-                        </a></li>
+                    <ul class="dropdown-menu dropdown-menu-end border-0 shadow-lg" 
+                        style="background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%); min-width: 200px;">
+                        <li>
+                            <a class="dropdown-item py-2 text-white" href="{% url 'accounts:profile' %}"
+                               style="font-size: 1rem; font-weight: 400;">
+                                <i class="fas fa-id-card me-3" style="width: 20px;"></i>Profile
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider bg-light opacity-25"></li>
+                        <!-- In your navbar.html, replace the logout link with this form -->
+                        <li>
+                            <form method="post" action="{% url 'accounts:logout' %}" style="display: inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="dropdown-item py-2 text-white" style="background: none; border: none; width: 100%; text-align: left;">
+                                    <i class="fas fa-sign-out-alt me-3" style="width: 20px;"></i>Logout
+                                </button>
+                            </form>
+                        </li>
                     </ul>
                 </li>
                 {% else %}
                 <li class="nav-item">
-                    <a class="nav-link" href="{% url 'accounts:login' %}">
-                        <i class="fas fa-sign-in-alt me-1"></i>Login
+                    <a class="nav-link px-4 rounded-3" href="{% url 'accounts:login' %}"
+                       style="font-size: 1.1rem; font-weight: 500; background: rgba(255,255,255,0.2);">
+                        <i class="fas fa-sign-in-alt me-2"></i>Login
                     </a>
                 </li>
                 {% endif %}
@@ -58,3 +298,58 @@
         </div>
     </div>
 </nav>
+
+<!-- Rest of your modals remain the same -->
+<!-- [Keep all your modal code exactly as it was] -->
+
+<style>
+/* Add this to your style.css or keep here */
+.navbar .nav-link {
+    transition: all 0.3s ease;
+}
+
+.navbar .nav-link:hover {
+    background: rgba(255, 255, 255, 0.15);
+    transform: translateY(-2px);
+}
+
+.navbar .dropdown-item {
+    transition: all 0.2s ease;
+    color: white !important;
+}
+
+.navbar .dropdown-item:hover {
+    background: rgba(255, 255, 255, 0.2) !important;
+    transform: translateX(5px);
+}
+
+.navbar .dropdown-item i {
+    color: #ffd700;
+    transition: all 0.2s ease;
+}
+
+.navbar .dropdown-item:hover i {
+    transform: scale(1.1);
+}
+
+.navbar .dropdown-header {
+    color: #ffd700 !important;
+    letter-spacing: 0.5px;
+}
+
+.navbar-brand {
+    letter-spacing: 1px;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+}
+
+@media (max-width: 991px) {
+    .navbar .nav-link {
+        padding: 10px !important;
+    }
+    
+    .navbar .dropdown-menu {
+        background: rgba(0,0,0,0.3) !important;
+        border: none;
+    }
+}
+</style>

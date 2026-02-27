@@ -1,0 +1,104 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Scheduled Reports{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Scheduled Reports</h2>
+        <a href="{% url 'reports:create_schedule' %}" class="btn btn-primary">
+            <i class="fas fa-plus-circle me-2"></i>Schedule New Report
+        </a>
+    </div>
+    
+    <div class="row">
+        {% for schedule in schedules %}
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header {% if schedule.is_active %}bg-success{% else %}bg-secondary{% endif %} text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">{{ schedule.name }}</h5>
+                    <div>
+                        <span class="badge bg-light text-dark me-2">
+                            {{ schedule.get_frequency_display }}
+                        </span>
+                        <div class="btn-group">
+                            <a href="{% url 'reports:edit_schedule' schedule.pk %}" class="btn btn-sm btn-light">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <a href="{% url 'reports:delete_schedule' schedule.pk %}" class="btn btn-sm btn-danger">
+                                <i class="fas fa-trash"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-sm-6">
+                            <strong>Report Type:</strong>
+                            <p>{{ schedule.get_report_type_display }}</p>
+                        </div>
+                        <div class="col-sm-6">
+                            <strong>Format:</strong>
+                            <p>{{ schedule.get_format_display }}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-sm-6">
+                            <strong>Schedule Time:</strong>
+                            <p>{{ schedule.time|time:"H:i" }}</p>
+                        </div>
+                        <div class="col-sm-6">
+                            <strong>Next Run:</strong>
+                            <p>{{ schedule.next_run|date:"Y-m-d H:i"|default:"Not scheduled" }}</p>
+                        </div>
+                    </div>
+                    
+                    {% if schedule.email_recipients %}
+                    <div class="mb-3">
+                        <strong>Email Recipients:</strong>
+                        <div>
+                            {% for email in schedule.email_recipients %}
+                            <span class="badge bg-info me-1">{{ email }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="mb-3">
+                        <strong>Last Run:</strong>
+                        <p>{{ schedule.last_run|date:"Y-m-d H:i"|default:"Never" }}</p>
+                    </div>
+                    
+                    {% if schedule.parameters %}
+                    <div>
+                        <strong>Report Parameters:</strong>
+                        <pre class="bg-light p-2 rounded">{{ schedule.parameters|pprint }}</pre>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="card-footer">
+                    <small class="text-muted">
+                        Created: {{ schedule.created_at|date:"Y-m-d H:i" }}
+                    </small>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body text-center py-5">
+                    <i class="fas fa-clock fa-4x text-muted mb-3"></i>
+                    <h5>No Scheduled Reports</h5>
+                    <p class="text-muted">Schedule your first report to get regular updates.</p>
+                    <a href="{% url 'reports:create_schedule' %}" class="btn btn-primary">
+                        <i class="fas fa-plus-circle me-2"></i>Schedule Report
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

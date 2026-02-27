@@ -1,0 +1,235 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load report_filters %}
+{% block title %}Lab Utilization Report{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Lab Utilization Report</h2>
+        <div>
+            <button onclick="window.print()" class="btn btn-secondary">
+                <i class="fas fa-print me-2"></i>Print
+            </button>
+            <a href="{% url 'reports:lab_utilization' %}" class="btn btn-primary">
+                <i class="fas fa-arrow-left me-2"></i>New Report
+            </a>
+        </div>
+    </div>
+    
+    <!-- Summary -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h6>Total Lab Orders</h6>
+                    <h3>{{ data.total_orders }}</h3>
+                </div>
+            </div>
+        </div>
+        {% if data.completed_count %}
+        <div class="col-md-4">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h6>Completed</h6>
+                    <h3>{{ data.completed_count }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <h6>Completion Rate</h6>
+                    <h3>{{ data.completion_rate|floatformat:1 }}%</h3>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
+        {% if data.avg_turnaround %}
+        <div class="col-md-4">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <h6>Avg Turnaround</h6>
+                    <h3>{{ data.avg_turnaround|floatformat:1 }} hrs</h3>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
+        {% if data.abnormal_count %}
+        <div class="col-md-4">
+            <div class="card bg-danger text-white">
+                <div class="card-body">
+                    <h6>Abnormal Results</h6>
+                    <h3>{{ data.abnormal_count }}</h3>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    
+    <div class="row">
+        <!-- Status Distribution -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">Orders by Status</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="statusChart" height="300"></canvas>
+                    <div class="table-responsive mt-3">
+                        <table class="table table-sm">
+                            {% for item in data.by_status %}
+                            <tr>
+                                <td>{{ item.status|title }}</td>
+                                <td>{{ item.count }}</td>
+                            </tr>
+                            {% endfor %}
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Priority Distribution -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">Orders by Priority</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="priorityChart" height="300"></canvas>
+                    <div class="table-responsive mt-3">
+                        <table class="table table-sm">
+                            {% for item in data.by_priority %}
+                            <tr>
+                                <td>{{ item.priority|title }}</td>
+                                <td>{{ item.count }}</td>
+                            </tr>
+                            {% endfor %}
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Most Ordered Tests -->
+    {% if data.by_test %}
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Most Frequently Ordered Tests</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Test Name</th>
+                                    <th>Number of Orders</th>
+                                    <th>Percentage</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for test in data.by_test %}
+                                <tr>
+                                    <td>{{ test.test }}</td>
+                                    <td>{{ test.count }}</td>
+                                    <td>{% widthratio test.count data.total_orders 100 %}%</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Abnormal Results by Test -->
+    {% if data.abnormal_by_test %}
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0">Abnormal Results by Test</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Test Name</th>
+                                    <th>Abnormal Results</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for test in data.abnormal_by_test %}
+                                <tr>
+                                    <td>{{ test.test }}</td>
+                                    <td>{{ test.count }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Status Chart
+const statusCtx = document.getElementById('statusChart').getContext('2d');
+new Chart(statusCtx, {
+    type: 'pie',
+    data: {
+        labels: [{% for item in data.by_status %}'{{ item.status|title }}',{% endfor %}],
+        datasets: [{
+            data: [{% for item in data.by_status %}{{ item.count }},{% endfor %}],
+            backgroundColor: [
+                'rgba(54, 162, 235, 0.5)',
+                'rgba(255, 206, 86, 0.5)',
+                'rgba(75, 192, 192, 0.5)',
+                'rgba(153, 102, 255, 0.5)',
+                'rgba(255, 99, 132, 0.5)',
+            ]
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false
+    }
+});
+
+// Priority Chart
+const priorityCtx = document.getElementById('priorityChart').getContext('2d');
+new Chart(priorityCtx, {
+    type: 'doughnut',
+    data: {
+        labels: [{% for item in data.by_priority %}'{{ item.priority|title }}',{% endfor %}],
+        datasets: [{
+            data: [{% for item in data.by_priority %}{{ item.count }},{% endfor %}],
+            backgroundColor: [
+                'rgba(40, 167, 69, 0.5)',
+                'rgba(255, 193, 7, 0.5)',
+                'rgba(220, 53, 69, 0.5)',
+            ]
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false
+    }
+});
+</script>
+{% endblock %}

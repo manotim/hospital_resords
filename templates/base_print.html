@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Print View{% endblock %}</title>
+    <style>
+        /* Print-specific styles */
+        @media print {
+            body {
+                font-family: 'Times New Roman', Times, serif;
+                line-height: 1.4;
+                color: #000;
+                background: #fff;
+                margin: 0.5in;
+            }
+            
+            .print-container {
+                max-width: 100%;
+                margin: 0 auto;
+            }
+            
+            /* Header styles */
+            .hospital-header {
+                margin-bottom: 20px;
+            }
+            
+            .hospital-name {
+                font-size: 24px;
+                font-weight: bold;
+                margin: 0;
+                color: #000;
+            }
+            
+            .hospital-info {
+                font-size: 12px;
+                margin: 5px 0;
+                color: #333;
+            }
+            
+            .header-line {
+                border-top: 2px solid #000;
+                margin: 10px 0;
+            }
+            
+            /* Document title */
+            .doc-title h2 {
+                font-size: 20px;
+                font-weight: bold;
+                margin: 0;
+                text-transform: uppercase;
+            }
+            
+            .doc-title h4 {
+                font-size: 16px;
+                color: #333;
+                margin: 5px 0 0;
+            }
+            
+            /* Section cards */
+            .section-card {
+                margin-bottom: 20px;
+                page-break-inside: avoid;
+            }
+            
+            .section-header {
+                background-color: #f0f0f0;
+                padding: 5px 10px;
+                border: 1px solid #000;
+                border-bottom: none;
+            }
+            
+            .section-header h5 {
+                margin: 0;
+                font-size: 14px;
+                font-weight: bold;
+                text-transform: uppercase;
+            }
+            
+            .section-body {
+                padding: 10px;
+                border: 1px solid #000;
+                border-top: none;
+            }
+            
+            /* Tables */
+            .info-table {
+                width: 100%;
+                border-collapse: collapse;
+            }
+            
+            .info-table td {
+                padding: 5px;
+                vertical-align: top;
+            }
+            
+            .data-table {
+                width: 100%;
+                border-collapse: collapse;
+            }
+            
+            .data-table th {
+                background-color: #f0f0f0;
+                padding: 8px;
+                text-align: left;
+                font-size: 12px;
+                border: 1px solid #000;
+            }
+            
+            .data-table td {
+                padding: 6px 8px;
+                border: 1px solid #000;
+                font-size: 12px;
+            }
+            
+            .notes-cell {
+                background-color: #f9f9f9;
+                font-style: italic;
+                padding: 8px;
+            }
+            
+            /* Notes */
+            .note-item {
+                margin-bottom: 15px;
+            }
+            
+            .note-header {
+                font-size: 12px;
+                margin-bottom: 5px;
+            }
+            
+            .note-content {
+                margin-left: 15px;
+                font-size: 12px;
+            }
+            
+            .note-divider {
+                border-top: 1px dashed #ccc;
+                margin: 10px 0;
+            }
+            
+            /* Signature section */
+            .signature-section {
+                margin-top: 40px;
+                page-break-inside: avoid;
+            }
+            
+            .signature-table {
+                width: 100%;
+                border-collapse: collapse;
+            }
+            
+            .signature-table td {
+                padding: 10px;
+                font-size: 12px;
+            }
+            
+            /* Print footer */
+            .print-footer {
+                margin-top: 30px;
+                font-size: 10px;
+                border-top: 1px solid #ccc;
+                padding-top: 10px;
+            }
+            
+            /* Page breaks */
+            .page-break {
+                page-break-before: always;
+            }
+            
+            /* Hide any interactive elements */
+            .no-print, .btn, button, .btn-group {
+                display: none !important;
+            }
+        }
+        
+        /* Screen styles (when previewing) */
+        @media screen {
+            body {
+                background: #f5f5f5;
+                padding: 20px;
+                font-family: Arial, sans-serif;
+            }
+            
+            .print-container {
+                max-width: 8.5in;
+                margin: 0 auto;
+                background: white;
+                padding: 0.5in;
+                box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            }
+            
+            /* Copy the print styles for screen preview */
+            .hospital-name {
+                font-size: 24px;
+                font-weight: bold;
+            }
+            
+            .section-header {
+                background-color: #f0f0f0;
+                padding: 5px 10px;
+                border: 1px solid #000;
+                border-bottom: none;
+            }
+            
+            .section-body {
+                padding: 10px;
+                border: 1px solid #000;
+                border-top: none;
+            }
+            
+            .data-table {
+                width: 100%;
+                border-collapse: collapse;
+            }
+            
+            .data-table th, .data-table td {
+                border: 1px solid #000;
+                padding: 6px 8px;
+            }
+            
+            /* Print button */
+            .print-button {
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                z-index: 1000;
+            }
+            
+            .print-button button {
+                padding: 10px 20px;
+                background: #007bff;
+                color: white;
+                border: none;
+                border-radius: 5px;
+                cursor: pointer;
+                font-size: 16px;
+            }
+            
+            .print-button button:hover {
+                background: #0056b3;
+            }
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Print button for screen view -->
+    <div class="print-button no-print">
+        <button onclick="window.print()">
+            <i class="fas fa-print"></i> Print / Save as PDF
+        </button>
+    </div>
+    
+    <!-- Main content -->
+    {% block content %}{% endblock %}
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

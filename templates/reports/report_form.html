@@ -1,0 +1,70 @@
+<!-- templates/reports/report_form.html -->
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">{{ title }}</h4>
+                </div>
+                <div class="card-body">
+                    <form method="post" id="reportForm">
+                        {% csrf_token %}
+                        
+                        <!-- Date Range -->
+                        <div class="card mb-3">
+                            <div class="card-header bg-light">
+                                <h5 class="mb-0">Date Range</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label for="{{ date_form.date_range.id_for_label }}" class="form-label">Select Period</label>
+                                    {{ date_form.date_range }}
+                                </div>
+                                
+                                <div class="row" id="customDateRange" style="display: none;">
+                                    <div class="col-md-6">
+                                        <label for="{{ date_form.start_date.id_for_label }}" class="form-label">Start Date</label>
+                                        {{ date_form.start_date }}
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="{{ date_form.end_date.id_for_label }}" class="form-label">End Date</label>
+                                        {{ date_form.end_date }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Report Specific Fields -->
+                        <div class="card mb-3">
+                            <div class="card-header bg-light">
+                                <h5 class="mb-0">Report Options</h5>
+                            </div>
+                            <div class="card-body">
+                                {{ form.as_p }}
+                            </div>
+                        </div>
+                        
+                        <div class="text-end">
+                            <a href="{% url 'reports:dashboard' %}" class="btn btn-secondary">Cancel</a>
+                            <button type="submit" class="btn btn-primary">Generate Report</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('id_date_range').addEventListener('change', function() {
+    const customRange = document.getElementById('customDateRange');
+    customRange.style.display = this.value === 'custom' ? 'flex' : 'none';
+});
+</script>
+{% endblock %}

@@ -34,4 +34,7 @@ urlpatterns = [
     # Clinical Notes
     path('note/add/<int:record_id>/', views.add_clinical_note, name='add_clinical_note'),
     path('note/<int:pk>/edit/', views.edit_clinical_note, name='edit_clinical_note'),
+
+    path('api/recent-records/', views.api_recent_records, name='api_recent_records'),
+    path('api/quick-create-record/', views.api_quick_create_record, name='api_quick_create_record'),
 ]

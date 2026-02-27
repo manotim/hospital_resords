@@ -1,0 +1,101 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Generate Report - Hospital Records{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Generate New Report</h4>
+                </div>
+                <div class="card-body">
+                    <form method="post" id="reportForm">
+                        {% csrf_token %}
+                        
+                        <!-- Report Type -->
+                        <div class="mb-3">
+                            <label for="{{ form.report_type.id_for_label }}" class="form-label">Report Type</label>
+                            {{ form.report_type }}
+                        </div>
+                        
+                        <!-- Title -->
+                        <div class="mb-3">
+                            <label for="{{ form.title.id_for_label }}" class="form-label">Report Title</label>
+                            {{ form.title }}
+                        </div>
+                        
+                        <!-- Date Range -->
+                        <div class="card mb-3">
+                            <div class="card-header bg-light">
+                                <h5 class="mb-0">Date Range</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label for="{{ date_form.date_range.id_for_label }}" class="form-label">Select Range</label>
+                                    {{ date_form.date_range }}
+                                </div>
+                                
+                                <div class="row" id="customDateRange" style="display: none;">
+                                    <div class="col-md-6">
+                                        <label for="{{ date_form.start_date.id_for_label }}" class="form-label">Start Date</label>
+                                        {{ date_form.start_date }}
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="{{ date_form.end_date.id_for_label }}" class="form-label">End Date</label>
+                                        {{ date_form.end_date }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Format -->
+                        <div class="mb-3">
+                            <label for="{{ form.format.id_for_label }}" class="form-label">Output Format</label>
+                            {{ form.format }}
+                        </div>
+                        
+                        <!-- Additional Options (shown/hidden based on report type) -->
+                        <div id="reportSpecificOptions"></div>
+                        
+                        <div class="text-end">
+                            <a href="{% url 'reports:dashboard' %}" class="btn btn-secondary">Cancel</a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-file-export me-2"></i>Generate Report
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Show/hide custom date range
+document.getElementById('id_date_range').addEventListener('change', function() {
+    const customRange = document.getElementById('customDateRange');
+    customRange.style.display = this.value === 'custom' ? 'flex' : 'none';
+});
+
+// Load report-specific options based on report type
+document.getElementById('id_report_type').addEventListener('change', function() {
+    const reportType = this.value;
+    const optionsContainer = document.getElementById('reportSpecificOptions');
+    
+    if (reportType) {
+        fetch(`/reports/api/options/${reportType}/`)
+            .then(response => response.text())
+            .then(html => {
+                optionsContainer.innerHTML = html;
+            });
+    } else {
+        optionsContainer.innerHTML = '';
+    }
+});
+</script>
+{% endblock %}

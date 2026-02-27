@@ -1,0 +1,152 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Reports Dashboard - Hospital Records{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Reports Dashboard</h2>
+        <div>
+            <a href="{% url 'reports:generate_report' %}" class="btn btn-primary">
+                <i class="fas fa-plus-circle me-2"></i>Generate New Report
+            </a>
+        </div>
+    </div>
+    
+    <!-- Quick Stats -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h6 class="text-white-50">Total Patients</h6>
+                    <h3 class="mb-0">{{ total_patients|default:"0" }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h6 class="text-white-50">Active Admissions</h6>
+                    <h3 class="mb-0">{{ active_admissions|default:"0" }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <h6 class="text-white-50">Today's Visits</h6>
+                    <h3 class="mb-0">{{ today_visits|default:"0" }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <h6 class="text-white-50">Pending Labs</h6>
+                    <h3 class="mb-0">{{ pending_labs|default:"0" }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Dashboard Widgets -->
+    <div class="row" id="dashboard-widgets">
+        {% for widget in widgets %}
+        <div class="col-md-{{ widget.widget.width }} mb-4">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">{{ widget.widget.name }}</h5>
+                    <button class="btn btn-sm btn-outline-secondary" onclick="refreshWidget({{ widget.widget.id }})">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                </div>
+                <div class="card-body" style="height: {{ widget.widget.height }}px;">
+                    {% include widget.widget.template_name with data=widget.data %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <!-- Recent Reports -->
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Recent Reports</h5>
+                </div>
+                <div class="card-body">
+                    <div class="list-group">
+                        {% for report in recent_reports %}
+                        <a href="{% url 'reports:view_report' report.pk %}" class="list-group-item list-group-item-action">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">{{ report.title }}</h6>
+                                    <small class="text-muted">{{ report.generated_at|date:"Y-m-d H:i" }}</small>
+                                </div>
+                                <span class="badge bg-{{ report.status }}">{{ report.get_status_display }}</span>
+                            </div>
+                        </a>
+                        {% empty %}
+                        <p class="text-muted mb-0">No reports generated yet.</p>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Scheduled Reports</h5>
+                </div>
+                <div class="card-body">
+                    <div class="list-group">
+                        {% for schedule in scheduled_reports %}
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">{{ schedule.name }}</h6>
+                                    <small class="text-muted">
+                                        {{ schedule.get_frequency_display }} at {{ schedule.time|time:"H:i" }}
+                                    </small>
+                                </div>
+                                <div>
+                                    <span class="badge bg-{% if schedule.is_active %}success{% else %}secondary{% endif %} me-2">
+                                        {% if schedule.is_active %}Active{% else %}Inactive{% endif %}
+                                    </span>
+                                    <a href="{% url 'reports:edit_schedule' schedule.pk %}" class="btn btn-sm btn-warning">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <p class="text-muted mb-0">No scheduled reports.</p>
+                        {% endfor %}
+                    </div>
+                    <div class="mt-3">
+                        <a href="{% url 'reports:create_schedule' %}" class="btn btn-sm btn-primary">
+                            <i class="fas fa-clock me-2"></i>Schedule New Report
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function refreshWidget(widgetId) {
+    fetch(`/reports/api/refresh-widget/${widgetId}/`)
+        .then(response => response.json())
+        .then(data => {
+            // Update widget content
+            location.reload(); // Simple refresh for now
+        });
+}
+</script>
+{% endblock %}

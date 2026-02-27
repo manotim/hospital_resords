@@ -1,82 +1,160 @@
 {% extends 'base.html' %}
-{% load crispy_forms_tags %}
+{% load static %}
 
-{% block title %}{{ title }} - Hospital Records{% endblock %}
+{% block title %}{{ title }}{% endblock %}
 
 {% block content %}
 <div class="container-fluid py-4">
-    <div class="row justify-content-center">
-        <div class="col-md-10">
+    <div class="row">
+        <div class="col-12">
             <div class="card">
                 <div class="card-header bg-primary text-white">
-                    <h4 class="mb-0">{{ title }} for {{ patient.get_full_name }}</h4>
+                    <h4 class="mb-0">{{ title }}</h4>
                 </div>
                 <div class="card-body">
+                    <!-- Patient Info Summary -->
+                    <div class="alert alert-info mb-4">
+                        <strong>Patient:</strong> {{ patient.get_full_name }} (ID: {{ patient.patient_id }})
+                        <br>
+                        <strong>Age/Gender:</strong> {{ patient.age }} years / {{ patient.get_gender_display }}
+                    </div>
+
                     <form method="post" novalidate>
                         {% csrf_token %}
-                        
-                        <div class="row">
-                            <div class="col-md-4">{{ form.record_type|as_crispy_field }}</div>
-                            <div class="col-md-4">{{ form.visit_date|as_crispy_field }}</div>
+
+                        {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {% for error in form.non_field_errors %}
+                                {{ error }}
+                            {% endfor %}
                         </div>
-                        
-                        <h5 class="mt-4 mb-3">Chief Complaint and History</h5>
-                        <div class="row">
-                            <div class="col-md-6">{{ form.chief_complaint|as_crispy_field }}</div>
-                            <div class="col-md-6">{{ form.history_of_present_illness|as_crispy_field }}</div>
-                        </div>
-                        
-                        <div class="row">
-                            <div class="col-md-6">{{ form.review_of_systems|as_crispy_field }}</div>
-                            <div class="col-md-6">{{ form.physical_exam|as_crispy_field }}</div>
-                        </div>
-                        
-                        <h5 class="mt-4 mb-3">Diagnoses</h5>
-                        <div id="diagnoses-formset">
-                            <div class="row mb-2">
-                                <div class="col-md-3"><strong>ICD-10 Code</strong></div>
-                                <div class="col-md-7"><strong>Description</strong></div>
-                                <div class="col-md-2"><strong>Primary</strong></div>
+                        {% endif %}
+
+                        <!-- Record Type and Visit Info -->
+                        <div class="card mb-3">
+                            <div class="card-header bg-light">
+                                <h5 class="mb-0">Visit Information</h5>
                             </div>
-                            <div class="row mb-2 diagnosis-row">
-                                <div class="col-md-3">
-                                    <input type="text" name="icd10_code" class="form-control" placeholder="e.g., I10">
-                                </div>
-                                <div class="col-md-7">
-                                    <input type="text" name="diagnosis_description" class="form-control" placeholder="Diagnosis description">
-                                </div>
-                                <div class="col-md-2">
-                                    <input type="checkbox" name="is_primary" class="form-check-input" style="margin-top: 10px;">
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-4 mb-3">
+                                        <label for="{{ form.record_type.id_for_label }}" class="form-label">Record Type *</label>
+                                        {{ form.record_type }}
+                                        {% if form.record_type.errors %}
+                                        <div class="invalid-feedback d-block">{{ form.record_type.errors }}</div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <label for="{{ form.visit_date.id_for_label }}" class="form-label">Visit Date & Time *</label>
+                                        {{ form.visit_date }}
+                                        {% if form.visit_date.errors %}
+                                        <div class="invalid-feedback d-block">{{ form.visit_date.errors }}</div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <div class="form-check mt-4">
+                                            {{ form.is_active }}
+                                            <label class="form-check-label" for="{{ form.is_active.id_for_label }}">
+                                                Active Record
+                                            </label>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                        <button type="button" class="btn btn-sm btn-secondary mb-4" onclick="addDiagnosisRow()">
-                            <i class="fas fa-plus me-1"></i>Add Another Diagnosis
-                        </button>
-                        
-                        <h5 class="mt-4 mb-3">Assessment and Plan</h5>
-                        <div class="row">
-                            <div class="col-md-6">{{ form.assessment|as_crispy_field }}</div>
-                            <div class="col-md-6">{{ form.plan|as_crispy_field }}</div>
+
+                        <!-- Chief Complaint -->
+                        <div class="card mb-3">
+                            <div class="card-header bg-light">
+                                <h5 class="mb-0">Chief Complaint</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label for="{{ form.chief_complaint.id_for_label }}" class="form-label">Chief Complaint *</label>
+                                    {{ form.chief_complaint }}
+                                    {% if form.chief_complaint.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.chief_complaint.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
                         </div>
-                        
-                        <h5 class="mt-4 mb-3">Follow-up</h5>
-                        <div class="row">
-                            <div class="col-md-4">{{ form.follow_up_date|as_crispy_field }}</div>
-                            <div class="col-md-8">{{ form.follow_up_instructions|as_crispy_field }}</div>
+
+                        <!-- History and Review -->
+                        <div class="card mb-3">
+                            <div class="card-header bg-light">
+                                <h5 class="mb-0">History</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label for="{{ form.history_of_present_illness.id_for_label }}" class="form-label">History of Present Illness *</label>
+                                    {{ form.history_of_present_illness }}
+                                    {% if form.history_of_present_illness.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.history_of_present_illness.errors }}</div>
+                                    {% endif %}
+                                </div>
+                                <div class="mb-3">
+                                    <label for="{{ form.review_of_systems.id_for_label }}" class="form-label">Review of Systems</label>
+                                    {{ form.review_of_systems }}
+                                    <small class="text-muted">Optional - document any relevant system review</small>
+                                </div>
+                            </div>
                         </div>
-                        
-                        {{ form.is_active|as_crispy_field }}
-                        
-                        <div class="mt-4">
-                            <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-save me-2"></i>Save Record
-                            </button>
-                            {% if record %}
-                                <a href="{% url 'records:record_detail' record.pk %}" class="btn btn-secondary">Cancel</a>
-                            {% else %}
-                                <a href="{% url 'patients:patient_detail' patient.pk %}" class="btn btn-secondary">Cancel</a>
-                            {% endif %}
+
+                        <!-- Physical Examination -->
+                        <div class="card mb-3">
+                            <div class="card-header bg-light">
+                                <h5 class="mb-0">Physical Examination</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label for="{{ form.physical_exam.id_for_label }}" class="form-label">Physical Exam Findings</label>
+                                    {{ form.physical_exam }}
+                                    <small class="text-muted">Optional - document physical examination findings</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Assessment and Plan -->
+                        <div class="card mb-3">
+                            <div class="card-header bg-light">
+                                <h5 class="mb-0">Assessment and Plan</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label for="{{ form.assessment.id_for_label }}" class="form-label">Assessment *</label>
+                                    {{ form.assessment }}
+                                    <small class="text-muted">Clinical assessment/diagnosis</small>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="{{ form.plan.id_for_label }}" class="form-label">Plan *</label>
+                                    {{ form.plan }}
+                                    <small class="text-muted">Treatment plan and next steps</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Follow-up -->
+                        <div class="card mb-3">
+                            <div class="card-header bg-light">
+                                <h5 class="mb-0">Follow-up</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="{{ form.follow_up_date.id_for_label }}" class="form-label">Follow-up Date</label>
+                                        {{ form.follow_up_date }}
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="{{ form.follow_up_instructions.id_for_label }}" class="form-label">Follow-up Instructions</label>
+                                        {{ form.follow_up_instructions }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="text-end">
+                            <a href="{% url 'patients:patient_detail' patient.pk %}" class="btn btn-secondary">Cancel</a>
+                            <button type="submit" class="btn btn-primary">Create Medical Record</button>
                         </div>
                     </form>
                 </div>
@@ -84,29 +162,4 @@
         </div>
     </div>
 </div>
-
-{% block extra_js %}
-<script>
-function addDiagnosisRow() {
-    const container = document.getElementById('diagnoses-formset');
-    const newRow = document.createElement('div');
-    newRow.className = 'row mb-2 diagnosis-row';
-    newRow.innerHTML = `
-        <div class="col-md-3">
-            <input type="text" name="icd10_code" class="form-control" placeholder="e.g., I10">
-        </div>
-        <div class="col-md-7">
-            <input type="text" name="diagnosis_description" class="form-control" placeholder="Diagnosis description">
-        </div>
-        <div class="col-md-2">
-            <input type="checkbox" name="is_primary" class="form-check-input" style="margin-top: 10px;">
-            <button type="button" class="btn btn-sm btn-danger ms-2" onclick="this.closest('.row').remove()">
-                <i class="fas fa-times"></i>
-            </button>
-        </div>
-    `;
-    container.appendChild(newRow);
-}
-</script>
-{% endblock %}
 {% endblock %}

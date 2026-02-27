@@ -1,0 +1,351 @@
+{% extends 'base_print.html' %}
+
+{% block title %}Medical Record - {{ record.record_number }}{% endblock %}
+
+{% block content %}
+<div class="print-container">
+    <!-- Hospital Header -->
+    <div class="hospital-header text-center mb-4">
+        <h1 class="hospital-name">HOSPITAL RECORDS SYSTEM</h1>
+        <p class="hospital-info">
+            123 Medical Center Drive, City, State 12345<br>
+            Phone: (123) 456-7890 | Email: info@hospital.com
+        </p>
+        <hr class="header-line">
+    </div>
+
+    <!-- Document Title -->
+    <div class="doc-title text-center mb-4">
+        <h2>MEDICAL RECORD</h2>
+        <h4 class="text-muted">Record #: {{ record.record_number }}</h4>
+    </div>
+
+    <!-- Patient Information -->
+    <div class="section-card mb-4">
+        <div class="section-header">
+            <h5>PATIENT INFORMATION</h5>
+        </div>
+        <div class="section-body">
+            <table class="info-table">
+                <tr>
+                    <td width="150"><strong>Full Name:</strong></td>
+                    <td>{{ record.patient.get_full_name }}</td>
+                    <td width="150"><strong>Patient ID:</strong></td>
+                    <td>{{ record.patient.patient_id }}</td>
+                </tr>
+                <tr>
+                    <td><strong>Date of Birth:</strong></td>
+                    <td>{{ record.patient.date_of_birth|date:"F d, Y" }}</td>
+                    <td><strong>Age/Gender:</strong></td>
+                    <td>{{ record.patient.age }} years / {{ record.patient.get_gender_display }}</td>
+                </tr>
+                <tr>
+                    <td><strong>Blood Group:</strong></td>
+                    <td>{{ record.patient.blood_group }}</td>
+                    <td><strong>Marital Status:</strong></td>
+                    <td>{{ record.patient.get_marital_status_display }}</td>
+                </tr>
+                <tr>
+                    <td><strong>Phone:</strong></td>
+                    <td>{{ record.patient.phone_number }}</td>
+                    <td><strong>Email:</strong></td>
+                    <td>{{ record.patient.email|default:"Not provided" }}</td>
+                </tr>
+                <tr>
+                    <td><strong>Address:</strong></td>
+                    <td colspan="3">{{ record.patient.address }}, {{ record.patient.city }}, {{ record.patient.state }} {{ record.patient.zip_code }}</td>
+                </tr>
+            </table>
+        </div>
+    </div>
+
+    <!-- Record Information -->
+    <div class="section-card mb-4">
+        <div class="section-header">
+            <h5>RECORD INFORMATION</h5>
+        </div>
+        <div class="section-body">
+            <table class="info-table">
+                <tr>
+                    <td width="150"><strong>Record Type:</strong></td>
+                    <td>{{ record.get_record_type_display }}</td>
+                    <td width="150"><strong>Visit Date:</strong></td>
+                    <td>{{ record.visit_date|date:"F d, Y H:i" }}</td>
+                </tr>
+                <tr>
+                    <td><strong>Attending Doctor:</strong></td>
+                    <td>Dr. {{ record.doctor.get_full_name }}</td>
+                    <td><strong>Status:</strong></td>
+                    <td>{% if record.is_active %}Active{% else %}Inactive{% endif %}</td>
+                </tr>
+                <tr>
+                    <td><strong>Created:</strong></td>
+                    <td>{{ record.created_at|date:"F d, Y H:i" }}</td>
+                    <td><strong>Last Updated:</strong></td>
+                    <td>{{ record.updated_at|date:"F d, Y H:i" }}</td>
+                </tr>
+            </table>
+        </div>
+    </div>
+
+    <!-- Chief Complaint -->
+    <div class="section-card mb-4">
+        <div class="section-header">
+            <h5>CHIEF COMPLAINT</h5>
+        </div>
+        <div class="section-body">
+            <p>{{ record.chief_complaint|linebreaks }}</p>
+        </div>
+    </div>
+
+    <!-- History of Present Illness -->
+    <div class="section-card mb-4">
+        <div class="section-header">
+            <h5>HISTORY OF PRESENT ILLNESS</h5>
+        </div>
+        <div class="section-body">
+            <p>{{ record.history_of_present_illness|linebreaks }}</p>
+        </div>
+    </div>
+
+    <!-- Review of Systems -->
+    {% if record.review_of_systems %}
+    <div class="section-card mb-4">
+        <div class="section-header">
+            <h5>REVIEW OF SYSTEMS</h5>
+        </div>
+        <div class="section-body">
+            <p>{{ record.review_of_systems|linebreaks }}</p>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Physical Examination -->
+    {% if record.physical_exam %}
+    <div class="section-card mb-4">
+        <div class="section-header">
+            <h5>PHYSICAL EXAMINATION</h5>
+        </div>
+        <div class="section-body">
+            <p>{{ record.physical_exam|linebreaks }}</p>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Diagnoses -->
+    {% with diagnoses=record.diagnoses.all %}
+    {% if diagnoses %}
+    <div class="section-card mb-4">
+        <div class="section-header">
+            <h5>DIAGNOSES</h5>
+        </div>
+        <div class="section-body">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>ICD-10 Code</th>
+                        <th>Description</th>
+                        <th>Status</th>
+                        <th>Primary</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for diagnosis in diagnoses %}
+                    <tr>
+                        <td>{{ diagnosis.icd10_code }}</td>
+                        <td>{{ diagnosis.description }}</td>
+                        <td>{{ diagnosis.get_status_display }}</td>
+                        <td>{% if diagnosis.is_primary %}Yes{% else %}No{% endif %}</td>
+                    </tr>
+                    {% if diagnosis.notes %}
+                    <tr>
+                        <td colspan="4" class="notes-cell"><em>Note: {{ diagnosis.notes }}</em></td>
+                    </tr>
+                    {% endif %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+    {% endwith %}
+
+    <!-- Assessment -->
+    <div class="section-card mb-4">
+        <div class="section-header">
+            <h5>ASSESSMENT</h5>
+        </div>
+        <div class="section-body">
+            <p>{{ record.assessment|linebreaks }}</p>
+        </div>
+    </div>
+
+    <!-- Plan -->
+    <div class="section-card mb-4">
+        <div class="section-header">
+            <h5>PLAN</h5>
+        </div>
+        <div class="section-body">
+            <p>{{ record.plan|linebreaks }}</p>
+        </div>
+    </div>
+
+    <!-- Prescriptions -->
+    {% with prescriptions=record.prescriptions.all %}
+    {% if prescriptions %}
+    <div class="section-card mb-4">
+        <div class="section-header">
+            <h5>PRESCRIPTIONS</h5>
+        </div>
+        <div class="section-body">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Medication</th>
+                        <th>Dosage</th>
+                        <th>Frequency</th>
+                        <th>Route</th>
+                        <th>Duration</th>
+                        <th>Quantity</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for prescription in prescriptions %}
+                    <tr>
+                        <td>{{ prescription.medication_name }}</td>
+                        <td>{{ prescription.dosage }} {{ prescription.dosage_unit }}</td>
+                        <td>{{ prescription.get_frequency_display }}</td>
+                        <td>{{ prescription.route }}</td>
+                        <td>{{ prescription.duration }}</td>
+                        <td>{{ prescription.quantity }}</td>
+                    </tr>
+                    {% if prescription.instructions %}
+                    <tr>
+                        <td colspan="6" class="notes-cell"><em>Instructions: {{ prescription.instructions }}</em></td>
+                    </tr>
+                    {% endif %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+    {% endwith %}
+
+    <!-- Lab Orders -->
+    {% with lab_orders=record.lab_orders.all %}
+    {% if lab_orders %}
+    <div class="section-card mb-4">
+        <div class="section-header">
+            <h5>LABORATORY ORDERS</h5>
+        </div>
+        <div class="section-body">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Test Name</th>
+                        <th>Priority</th>
+                        <th>Ordered Date</th>
+                        <th>Status</th>
+                        <th>Result</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for lab in lab_orders %}
+                    <tr>
+                        <td>{{ lab.test_name }}</td>
+                        <td>{{ lab.get_priority_display }}</td>
+                        <td>{{ lab.ordered_date|date:"Y-m-d H:i" }}</td>
+                        <td>{{ lab.get_status_display }}</td>
+                        <td>
+                            {% if lab.result %}
+                                {{ lab.result.result_value }} {{ lab.result.unit }}
+                                {% if lab.result.is_abnormal %} (Abnormal){% endif %}
+                            {% else %}
+                                Pending
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+    {% endwith %}
+
+    <!-- Follow-up Information -->
+    {% if record.follow_up_date or record.follow_up_instructions %}
+    <div class="section-card mb-4">
+        <div class="section-header">
+            <h5>FOLLOW-UP INFORMATION</h5>
+        </div>
+        <div class="section-body">
+            {% if record.follow_up_date %}
+            <p><strong>Follow-up Date:</strong> {{ record.follow_up_date|date:"F d, Y" }}</p>
+            {% endif %}
+            {% if record.follow_up_instructions %}
+            <p><strong>Instructions:</strong><br>{{ record.follow_up_instructions|linebreaks }}</p>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Clinical Notes -->
+    {% with notes=record.clinical_notes.all %}
+    {% if notes %}
+    <div class="section-card mb-4">
+        <div class="section-header">
+            <h5>CLINICAL NOTES</h5>
+        </div>
+        <div class="section-body">
+            {% for note in notes %}
+            {% if not note.is_private %}
+            <div class="note-item mb-3">
+                <div class="note-header">
+                    <strong>{{ note.get_note_type_display }}</strong> 
+                    <span class="text-muted">by {{ note.author.get_full_name }} on {{ note.created_at|date:"F d, Y H:i" }}</span>
+                </div>
+                <div class="note-content">
+                    {{ note.content|linebreaks }}
+                </div>
+            </div>
+            {% if not forloop.last %}<hr class="note-divider">{% endif %}
+            {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+    {% endwith %}
+
+    <!-- Signature and Footer -->
+    <div class="signature-section mt-5">
+        <table class="signature-table">
+            <tr>
+                <td class="text-center" width="33%">
+                    _________________________<br>
+                    <strong>Attending Physician</strong><br>
+                    Dr. {{ record.doctor.get_full_name }}
+                </td>
+                <td class="text-center" width="33%">
+                    _________________________<br>
+                    <strong>Patient/Guardian Signature</strong>
+                </td>
+                <td class="text-center" width="33%">
+                    _________________________<br>
+                    <strong>Date</strong>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- Print Footer -->
+    <div class="print-footer text-muted text-center mt-4">
+        <small>
+            Printed on: {% now "F d, Y H:i:s" %} | 
+            Printed by: {{ request.user.get_full_name }} | 
+            Page 1 of 1
+        </small>
+    </div>
+</div>
+{% endblock %}

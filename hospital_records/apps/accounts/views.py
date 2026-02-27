@@ -8,7 +8,18 @@ from .forms import UserProfileForm, UserForm
 
 @login_required
 def profile(request):
-    return render(request, 'accounts/profile.html', {'user': request.user})
+    """User profile view"""
+    context = {
+        'user': request.user,
+        # You can add more context data as needed
+        'stats': {
+            'total_patients': 0,  # Add your actual stats here
+            'total_records': 0,
+            'total_prescriptions': 0,
+        },
+        'recent_activity': [],  # Add recent activity here
+    }
+    return render(request, 'accounts/profile.html', context)
 
 @login_required
 def edit_profile(request):

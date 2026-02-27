@@ -5,6 +5,7 @@ from django.contrib import messages
 from django.db.models import Q, Count
 from django.utils import timezone
 from .models import Patient, Admission, VitalSign
+from django.http import JsonResponse
 from .forms import PatientForm, AdmissionForm, VitalSignForm
 from datetime import datetime, timedelta
 
@@ -102,7 +103,7 @@ def patient_add(request):
     
     return render(request, 'patients/patient_form.html', {'form': form, 'title': 'Register New Patient'})
 
-    
+
 @login_required
 def patient_edit(request, pk):
     patient = get_object_or_404(Patient, pk=pk)
@@ -201,3 +202,43 @@ def add_vitals(request, pk):
         form = VitalSignForm()
     
     return render(request, 'patients/vitals_form.html', {'form': form, 'patient': patient})
+
+
+@login_required
+def api_patients(request):
+    """API endpoint to get patients for modals"""
+    try:
+        # Get search query if provided
+        query = request.GET.get('q', '')
+        
+        patients = Patient.objects.all().order_by('first_name')
+        
+        # Apply search if query exists
+        if query:
+            patients = patients.filter(
+                Q(first_name__icontains=query) |
+                Q(last_name__icontains=query) |
+                Q(patient_id__icontains=query) |
+                Q(phone_number__icontains=query)
+            )
+        
+        # Limit results for performance
+        patients = patients[:100]
+        
+        data = []
+        for patient in patients:
+            data.append({
+                'id': patient.id,
+                'patient_id': patient.patient_id,
+                'full_name': patient.get_full_name(),
+                'first_name': patient.first_name,
+                'last_name': patient.last_name,
+                'email': patient.email or '',
+                'age': patient.age(),
+                'gender': patient.get_gender_display(),
+                'gender_code': patient.gender,
+                'phone_number': patient.phone_number,
+            })
+        return JsonResponse(data, safe=False)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)

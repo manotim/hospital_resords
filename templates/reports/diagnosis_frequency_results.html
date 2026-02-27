@@ -1,0 +1,121 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load report_filters %}
+{% block title %}Diagnosis Frequency Report{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Diagnosis Frequency Report</h2>
+        <div>
+            <button onclick="window.print()" class="btn btn-secondary">
+                <i class="fas fa-print me-2"></i>Print
+            </button>
+            <a href="{% url 'reports:diagnosis_frequency' %}" class="btn btn-primary">
+                <i class="fas fa-arrow-left me-2"></i>New Report
+            </a>
+        </div>
+    </div>
+    
+    <!-- Summary -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <h6>Total Diagnoses</h6>
+                    <h3>{{ data.total_diagnoses }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h6>Unique Diagnoses</h6>
+                    <h3>{{ data.unique_diagnoses }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-12 mb-4">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Diagnosis Frequency Chart</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="diagnosisChart" height="400"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Detailed Diagnosis List</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead>
+                                <tr>
+                                    <th>ICD-10 Code</th>
+                                    <th>Description</th>
+                                    <th>Frequency</th>
+                                    <th>Percentage</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in data.frequencies %}
+                                <tr>
+                                    <td><strong>{{ item.icd10_code }}</strong></td>
+                                    <td>{{ item.description }}</td>
+                                    <td>
+                                        <span class="badge bg-primary">{{ item.count }}</span>
+                                    </td>
+                                    <td>
+                                        {% widthratio item.count data.total_diagnoses 100 %}%
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+const ctx = document.getElementById('diagnosisChart').getContext('2d');
+new Chart(ctx, {
+    type: 'bar',
+    data: {
+        labels: [{% for item in data.frequencies %}'{{ item.icd10_code }}',{% endfor %}],
+        datasets: [{
+            label: 'Number of Diagnoses',
+            data: [{% for item in data.frequencies %}{{ item.count }},{% endfor %}],
+            backgroundColor: 'rgba(75, 192, 192, 0.5)',
+            borderColor: 'rgba(75, 192, 192, 1)',
+            borderWidth: 1
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            y: {
+                beginAtZero: true,
+                stepSize: 1
+            }
+        }
+    }
+});
+</script>
+{% endblock %}

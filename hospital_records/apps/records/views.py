@@ -3,6 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db.models import Q, Count
 from django.utils import timezone
+from django.http import JsonResponse
 from hospital_records.apps.patients.models import Patient
 from .models import (
     MedicalRecord, Diagnosis, Prescription, LabOrder, LabResult,
@@ -47,6 +48,9 @@ def record_list(request):
     total_records = records.count()
     today_records = records.filter(visit_date__date=timezone.now().date()).count()
     
+    # Get all patients for the modal (you might want to limit this)
+    patients = Patient.objects.all().order_by('first_name')[:100]  # Limit to 100 for performance
+    
     context = {
         'records': records,
         'total_records': total_records,
@@ -55,8 +59,10 @@ def record_list(request):
         'record_type': record_type,
         'date_from': date_from,
         'date_to': date_to,
+        'patients': patients,
     }
     return render(request, 'records/record_list.html', context)
+
 
 @login_required
 def create_medical_record(request, patient_id):
@@ -138,6 +144,7 @@ def edit_record(request, pk):
     context = {
         'form': form,
         'record': record,
+        'patient': record.patient, 
         'title': 'Edit Medical Record'
     }
     return render(request, 'records/record_form.html', context)
@@ -441,3 +448,56 @@ def edit_clinical_note(request, pk):
         'title': 'Edit Clinical Note'
     }
     return render(request, 'records/clinical_note_form.html', context)
+
+
+@login_required
+def api_recent_records(request):
+    """API endpoint to get recent records for the modal"""
+    limit = int(request.GET.get('limit', 50))
+    records = MedicalRecord.objects.select_related('patient', 'doctor').order_by('-visit_date')[:limit]
+    
+    data = []
+    for record in records:
+        data.append({
+            'id': record.id,
+            'record_number': record.record_number,
+            'patient_name': record.patient.get_full_name(),
+            'patient_id': record.patient.patient_id,
+            'visit_date': record.visit_date.strftime('%Y-%m-%d %H:%M'),
+            'record_type': record.record_type,
+            'record_type_display': record.get_record_type_display(),
+        })
+    
+    return JsonResponse(data, safe=False)
+
+@login_required
+def api_quick_create_record(request):
+    """API to quickly create a basic medical record"""
+    if request.method == 'POST':
+        try:
+            import json
+            data = json.loads(request.body)
+            
+            patient = get_object_or_404(Patient, pk=data['patient_id'])
+            
+            record = MedicalRecord.objects.create(
+                patient=patient,
+                doctor=request.user,
+                record_type=data.get('record_type', 'consultation'),
+                chief_complaint=data.get('chief_complaint', 'New visit'),
+                history_of_present_illness='To be documented',
+                assessment='Pending',
+                plan='To be determined',
+                visit_date=timezone.now()
+            )
+            
+            return JsonResponse({
+                'success': True,
+                'record_id': record.id,
+                'record_number': record.record_number
+            })
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)}, status=400)
+    
+    return JsonResponse({'error': 'Method not allowed'}, status=405)
+

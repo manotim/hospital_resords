@@ -1,0 +1,90 @@
+{% load report_filters %}
+{% if data.total_patients %}
+<!-- Summary Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <h6>Total Patients</h6>
+                <h3>{{ data.total_patients }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <h6>Active Patients</h6>
+                <h3>{{ data.active_patients }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <h6>Admissions</h6>
+                <h3>{{ data.admissions }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body">
+                <h6>Discharges</h6>
+                <h3>{{ data.discharges }}</h3>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Generic Data Display -->
+<div class="row">
+    {% for key, value in data.items %}
+    {% if key not in 'total_patients,active_patients,admissions,discharges' and value %}
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">{{ key|title|replace:"_ " }}</h5>
+            </div>
+            <div class="card-body">
+                {% if value|is_list %}
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    {% for item in value.0.keys %}
+                                    <th>{{ item|title|replace:"_ " }}</th>
+                                    {% endfor %}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in value %}
+                                <tr>
+                                    {% for k, v in item.items %}
+                                    <td>{{ v }}</td>
+                                    {% endfor %}
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% elif value|is_dict %}
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            {% for k, v in value.items %}
+                            <tr>
+                                <th>{{ k|title|replace:"_ " }}</th>
+                                <td>{{ v }}</td>
+                            </tr>
+                            {% endfor %}
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="lead">{{ value }}</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    {% endfor %}
+</div>

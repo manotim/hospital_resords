@@ -1,0 +1,27 @@
+{% if chart_type == 'bar' %}
+<canvas id="{{ chart_id }}" class="report-chart" height="{{ height|default:300 }}"></canvas>
+<script>
+new Chart(document.getElementById('{{ chart_id }}'), {
+    type: 'bar',
+    data: {
+        labels: {{ labels|safe }},
+        datasets: [{
+            label: '{{ dataset_label }}',
+            data: {{ data|safe }},
+            backgroundColor: '{{ background_color|default:"rgba(54, 162, 235, 0.5)" }}',
+            borderColor: '{{ border_color|default:"rgba(54, 162, 235, 1)" }}',
+            borderWidth: 1
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            y: {
+                beginAtZero: true
+            }
+        }
+    }
+});
+</script>
+{% endif %}

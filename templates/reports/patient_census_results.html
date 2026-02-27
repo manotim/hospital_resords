@@ -1,0 +1,176 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load report_filters %}
+{% block title %}Patient Census Report{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Patient Census Report</h2>
+        <div>
+            <button onclick="window.print()" class="btn btn-secondary">
+                <i class="fas fa-print me-2"></i>Print
+            </button>
+            <a href="{% url 'reports:patient_census' %}" class="btn btn-primary">
+                <i class="fas fa-arrow-left me-2"></i>New Report
+            </a>
+        </div>
+    </div>
+    
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h6>Total Patients</h6>
+                    <h3>{{ data.total_patients }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h6>Active Patients</h6>
+                    <h3>{{ data.active_patients }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <h6>Admissions</h6>
+                    <h3>{{ data.admissions }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <h6>Discharges</h6>
+                    <h3>{{ data.discharges }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <!-- By Department -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">Patients by Department</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="departmentChart" height="300"></canvas>
+                    <div class="table-responsive mt-3">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Department</th>
+                                    <th>Count</th>
+                                    <th>Percentage</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for dept in data.by_department %}
+                                <tr>
+                                    <td>{{ dept.department }}</td>
+                                    <td>{{ dept.count }}</td>
+                                    <td>
+                                        {% widthratio dept.count data.total_patients 100 %}%
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- By Ward -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">Patients by Ward</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="wardChart" height="300"></canvas>
+                    <div class="table-responsive mt-3">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Ward</th>
+                                    <th>Count</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for ward in data.by_ward %}
+                                <tr>
+                                    <td>Ward {{ ward.ward }}</td>
+                                    <td>{{ ward.count }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Department Chart
+const deptCtx = document.getElementById('departmentChart').getContext('2d');
+new Chart(deptCtx, {
+    type: 'bar',
+    data: {
+        labels: [{% for dept in data.by_department %}'{{ dept.department }}',{% endfor %}],
+        datasets: [{
+            label: 'Number of Patients',
+            data: [{% for dept in data.by_department %}{{ dept.count }},{% endfor %}],
+            backgroundColor: 'rgba(54, 162, 235, 0.5)',
+            borderColor: 'rgba(54, 162, 235, 1)',
+            borderWidth: 1
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            y: {
+                beginAtZero: true,
+                stepSize: 1
+            }
+        }
+    }
+});
+
+// Ward Chart
+const wardCtx = document.getElementById('wardChart').getContext('2d');
+new Chart(wardCtx, {
+    type: 'pie',
+    data: {
+        labels: [{% for ward in data.by_ward %}'Ward {{ ward.ward }}',{% endfor %}],
+        datasets: [{
+            data: [{% for ward in data.by_ward %}{{ ward.count }},{% endfor %}],
+            backgroundColor: [
+                'rgba(255, 99, 132, 0.5)',
+                'rgba(54, 162, 235, 0.5)',
+                'rgba(255, 206, 86, 0.5)',
+                'rgba(75, 192, 192, 0.5)',
+                'rgba(153, 102, 255, 0.5)',
+            ]
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,403 @@
+<!-- /home/devmike/dev/hosi/hospital_records_system/templates/accounts/profile.html -->
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}My Profile - {{ user.get_full_name|default:user.username }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .profile-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 2rem;
+        border-radius: 15px 15px 0 0;
+        margin-bottom: 0;
+    }
+    
+    .profile-avatar {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        background: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1rem;
+        border: 4px solid #ffd700;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+    
+    .profile-avatar i {
+        font-size: 4rem;
+        color: #667eea;
+    }
+    
+    .profile-card {
+        border: none;
+        border-radius: 15px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        overflow: hidden;
+        margin-bottom: 2rem;
+    }
+    
+    .profile-section {
+        padding: 1.5rem;
+        border-bottom: 1px solid #eef2f7;
+    }
+    
+    .profile-section:last-child {
+        border-bottom: none;
+    }
+    
+    .section-title {
+        color: #2c3e50;
+        font-size: 1.2rem;
+        font-weight: 600;
+        margin-bottom: 1.5rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid #667eea;
+        display: inline-block;
+    }
+    
+    .info-label {
+        color: #6c757d;
+        font-size: 0.9rem;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 0.3rem;
+    }
+    
+    .info-value {
+        color: #2c3e50;
+        font-size: 1.1rem;
+        font-weight: 500;
+        margin-bottom: 1rem;
+    }
+    
+    .activity-stats {
+        background: linear-gradient(135deg, #f5f7fa 0%, #e9ecef 100%);
+        border-radius: 10px;
+        padding: 1.5rem;
+        text-align: center;
+        transition: transform 0.3s ease;
+    }
+    
+    .activity-stats:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    
+    .stat-number {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #667eea;
+        margin-bottom: 0.5rem;
+    }
+    
+    .stat-label {
+        color: #6c757d;
+        font-size: 0.9rem;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .edit-profile-btn {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        border-radius: 50px;
+        padding: 0.75rem 2rem;
+        font-weight: 500;
+        letter-spacing: 0.5px;
+        transition: all 0.3s ease;
+    }
+    
+    .edit-profile-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    }
+    
+    .activity-timeline {
+        position: relative;
+        padding-left: 2rem;
+    }
+    
+    .activity-timeline::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: linear-gradient(to bottom, #667eea, #764ba2);
+    }
+    
+    .timeline-item {
+        position: relative;
+        padding-bottom: 1.5rem;
+    }
+    
+    .timeline-item::before {
+        content: '';
+        position: absolute;
+        left: -2.1rem;
+        top: 0;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: #667eea;
+        border: 2px solid white;
+        box-shadow: 0 0 0 2px #667eea;
+    }
+    
+    .timeline-date {
+        color: #6c757d;
+        font-size: 0.85rem;
+        margin-bottom: 0.3rem;
+    }
+    
+    .timeline-title {
+        color: #2c3e50;
+        font-weight: 600;
+        margin-bottom: 0.3rem;
+    }
+    
+    .timeline-description {
+        color: #6c757d;
+        font-size: 0.95rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-md-4">
+            <!-- Profile Summary Card -->
+            <div class="profile-card">
+                <div class="profile-header text-center">
+                    <div class="profile-avatar">
+                        <i class="fas fa-user-md"></i>
+                    </div>
+                    <h3 class="mb-1">{{ user.get_full_name|default:user.username }}</h3>
+                    <p class="mb-0">
+                        <span class="badge bg-warning text-dark px-3 py-2">
+                            <i class="fas fa-user-tag me-2"></i>
+                            {% if user.is_superuser %}
+                                System Administrator
+                            {% elif user.is_staff %}
+                                Staff
+                            {% else %}
+                                {{ user.groups.first.name|default:"User" }}
+                            {% endif %}
+                        </span>
+                    </p>
+                </div>
+                
+                <div class="profile-section">
+                    <h5 class="section-title">Contact Information</h5>
+                    <div class="info-label">Email Address</div>
+                    <div class="info-value">
+                        <i class="fas fa-envelope me-2 text-primary"></i>{{ user.email|default:"Not provided" }}
+                    </div>
+                    
+                    <div class="info-label">Username</div>
+                    <div class="info-value">
+                        <i class="fas fa-user me-2 text-primary"></i>{{ user.username }}
+                    </div>
+                    
+                    <div class="info-label">Member Since</div>
+                    <div class="info-value">
+                        <i class="fas fa-calendar-alt me-2 text-primary"></i>{{ user.date_joined|date:"F j, Y" }}
+                    </div>
+                    
+                    <div class="info-label">Last Login</div>
+                    <div class="info-value">
+                        <i class="fas fa-clock me-2 text-primary"></i>{{ user.last_login|date:"F j, Y H:i"|default:"Never" }}
+                    </div>
+                </div>
+                
+                <div class="profile-section">
+                    <h5 class="section-title">Account Status</h5>
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <span>Active Account</span>
+                        {% if user.is_active %}
+                            <span class="badge bg-success px-3 py-2">Active</span>
+                        {% else %}
+                            <span class="badge bg-danger px-3 py-2">Inactive</span>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span>Email Verified</span>
+                        {% if user.email %}
+                            <span class="badge bg-success px-3 py-2">Verified</span>
+                        {% else %}
+                            <span class="badge bg-warning px-3 py-2">Not Verified</span>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="profile-section text-center">
+                    <a href="{% url 'accounts:edit_profile' %}" class="btn edit-profile-btn text-white w-100">
+                        <i class="fas fa-edit me-2"></i>Edit Profile
+                    </a>
+                    
+                    <a href="{% url 'accounts:change_password' %}" class="btn btn-outline-primary w-100 mt-3">
+                        <i class="fas fa-key me-2"></i>Change Password
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-8">
+            <!-- Activity Stats -->
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <div class="activity-stats">
+                        <div class="stat-number">{{ stats.total_patients|default:"0" }}</div>
+                        <div class="stat-label">Patients Treated</div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="activity-stats">
+                        <div class="stat-number">{{ stats.total_records|default:"0" }}</div>
+                        <div class="stat-label">Medical Records</div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="activity-stats">
+                        <div class="stat-number">{{ stats.total_prescriptions|default:"0" }}</div>
+                        <div class="stat-label">Prescriptions</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Recent Activity -->
+            <div class="profile-card">
+                <div class="profile-section">
+                    <h5 class="section-title">Recent Activity</h5>
+                    
+                    {% if recent_activity %}
+                        <div class="activity-timeline">
+                            {% for activity in recent_activity %}
+                                <div class="timeline-item">
+                                    <div class="timeline-date">
+                                        <i class="far fa-calendar-alt me-2"></i>{{ activity.timestamp|date:"M d, Y H:i" }}
+                                    </div>
+                                    <div class="timeline-title">{{ activity.title }}</div>
+                                    <div class="timeline-description">{{ activity.description }}</div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-history fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">No recent activity to display</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Quick Actions -->
+            <div class="profile-card mt-4">
+                <div class="profile-section">
+                    <h5 class="section-title">Quick Actions</h5>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <a href="{% url 'patients:patient_list' %}" class="btn btn-outline-primary w-100 py-3">
+                                <i class="fas fa-users fa-2x mb-2 d-block"></i>
+                                <span>View Patients</span>
+                            </a>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <a href="{% url 'records:record_list' %}" class="btn btn-outline-success w-100 py-3">
+                                <i class="fas fa-notes-medical fa-2x mb-2 d-block"></i>
+                                <span>Medical Records</span>
+                            </a>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <a href="{% url 'reports:dashboard' %}" class="btn btn-outline-info w-100 py-3">
+                                <i class="fas fa-chart-bar fa-2x mb-2 d-block"></i>
+                                <span>Reports</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Security Settings -->
+            <div class="profile-card mt-4">
+                <div class="profile-section">
+                    <h5 class="section-title">Security Settings</h5>
+                    
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" id="twoFactorAuth">
+                        <label class="form-check-label fw-medium" for="twoFactorAuth">
+                            Two-Factor Authentication
+                            <small class="d-block text-muted">Add an extra layer of security to your account</small>
+                        </label>
+                    </div>
+                    
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" id="emailNotifications">
+                        <label class="form-check-label fw-medium" for="emailNotifications">
+                            Email Notifications
+                            <small class="d-block text-muted">Receive email alerts for important activities</small>
+                        </label>
+                    </div>
+                    
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="loginAlerts">
+                        <label class="form-check-label fw-medium" for="loginAlerts">
+                            Login Alerts
+                            <small class="d-block text-muted">Get notified of new login attempts</small>
+                        </label>
+                    </div>
+                    
+                    <hr class="my-4">
+                    
+                    <!-- Removed the login_history and connected_devices links that were causing errors -->
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Additional security features coming soon!
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle security settings toggles (these would need backend implementation)
+    const toggles = document.querySelectorAll('.form-check-input');
+    toggles.forEach(toggle => {
+        toggle.addEventListener('change', function() {
+            // This is just UI feedback - you'd need to implement the actual functionality
+            showNotification('Setting updated: ' + this.nextElementSibling.textContent.trim());
+        });
+    });
+});
+
+function showNotification(message) {
+    // Create a temporary notification
+    const notification = document.createElement('div');
+    notification.className = 'alert alert-success alert-dismissible fade show position-fixed top-0 end-0 m-3';
+    notification.style.zIndex = '9999';
+    notification.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    `;
+    document.body.appendChild(notification);
+    
+    // Auto dismiss after 3 seconds
+    setTimeout(() => {
+        notification.remove();
+    }, 3000);
+}
+</script>
+{% endblock %}

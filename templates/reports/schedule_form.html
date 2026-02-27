@@ -1,0 +1,181 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{% if schedule %}Edit{% else %}Create{% endif %} Scheduled Report{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">{% if schedule %}Edit{% else %}Create New{% endif %} Scheduled Report</h4>
+                </div>
+                <div class="card-body">
+                    <form method="post" id="scheduleForm">
+                        {% csrf_token %}
+                        
+                        <!-- Basic Information -->
+                        <div class="mb-3">
+                            <label for="{{ form.name.id_for_label }}" class="form-label">Schedule Name *</label>
+                            {{ form.name }}
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.report_type.id_for_label }}" class="form-label">Report Type *</label>
+                                {{ form.report_type }}
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ form.format.id_for_label }}" class="form-label">Output Format *</label>
+                                {{ form.format }}
+                            </div>
+                        </div>
+                        
+                        <!-- Schedule Settings -->
+                        <div class="card mb-3">
+                            <div class="card-header bg-light">
+                                <h5 class="mb-0">Schedule Settings</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label for="{{ form.frequency.id_for_label }}" class="form-label">Frequency *</label>
+                                        {{ form.frequency }}
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="{{ form.time.id_for_label }}" class="form-label">Time of Day *</label>
+                                        {{ form.time }}
+                                    </div>
+                                </div>
+                                
+                                <div id="weeklyOptions" class="row mb-3" style="display: none;">
+                                    <div class="col-md-6">
+                                        <label for="{{ form.day_of_week.id_for_label }}" class="form-label">Day of Week</label>
+                                        {{ form.day_of_week }}
+                                    </div>
+                                </div>
+                                
+                                <div id="monthlyOptions" class="row mb-3" style="display: none;">
+                                    <div class="col-md-6">
+                                        <label for="{{ form.day_of_month.id_for_label }}" class="form-label">Day of Month</label>
+                                        {{ form.day_of_month }}
+                                        <small class="text-muted">Enter day (1-31)</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Email Settings -->
+                        <div class="card mb-3">
+                            <div class="card-header bg-light">
+                                <h5 class="mb-0">Email Settings</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label for="{{ form.email_recipients.id_for_label }}" class="form-label">Email Recipients</label>
+                                    {{ form.email_recipients }}
+                                    <small class="text-muted">Enter email addresses separated by commas</small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Report Parameters -->
+                        <div class="card mb-3">
+                            <div class="card-header bg-light">
+                                <h5 class="mb-0">Report Parameters</h5>
+                            </div>
+                            <div class="card-body">
+                                <div id="parameterFields">
+                                    <!-- Will be populated via JavaScript -->
+                                </div>
+                                <input type="hidden" name="parameters" id="parameters" value='{{ form.parameters.value|default:"{}" }}'>
+                            </div>
+                        </div>
+                        
+                        <!-- Active Status -->
+                        <div class="mb-3 form-check">
+                            {{ form.is_active }}
+                            <label class="form-check-label" for="{{ form.is_active.id_for_label }}">
+                                Active (report will be generated on schedule)
+                            </label>
+                        </div>
+                        
+                        <div class="text-end">
+                            <a href="{% url 'reports:scheduled_reports' %}" class="btn btn-secondary">Cancel</a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>{% if schedule %}Update{% else %}Create{% endif %} Schedule
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Show/hide frequency-specific options
+document.getElementById('id_frequency').addEventListener('change', function() {
+    const weeklyOptions = document.getElementById('weeklyOptions');
+    const monthlyOptions = document.getElementById('monthlyOptions');
+    
+    weeklyOptions.style.display = 'none';
+    monthlyOptions.style.display = 'none';
+    
+    if (this.value === 'weekly') {
+        weeklyOptions.style.display = 'flex';
+    } else if (this.value === 'monthly') {
+        monthlyOptions.style.display = 'flex';
+    }
+});
+
+// Load parameter fields based on report type
+document.getElementById('id_report_type').addEventListener('change', function() {
+    const reportType = this.value;
+    const container = document.getElementById('parameterFields');
+    
+    if (reportType) {
+        // Load parameter template
+        fetch(`/reports/api/parameters/${reportType}/`)
+            .then(response => response.text())
+            .then(html => {
+                container.innerHTML = html;
+                
+                // Add event listeners to parameter fields to update hidden input
+                const params = {};
+                document.querySelectorAll('#parameterFields input, #parameterFields select').forEach(field => {
+                    field.addEventListener('change', updateParameters);
+                });
+            });
+    } else {
+        container.innerHTML = '';
+    }
+});
+
+// Update hidden parameters input
+function updateParameters() {
+    const params = {};
+    document.querySelectorAll('#parameterFields input, #parameterFields select').forEach(field => {
+        if (field.type === 'checkbox') {
+            params[field.name] = field.checked;
+        } else if (field.type === 'number') {
+            params[field.name] = parseFloat(field.value);
+        } else {
+            params[field.name] = field.value;
+        }
+    });
+    document.getElementById('parameters').value = JSON.stringify(params);
+}
+
+// Trigger change on load to show correct options
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('id_frequency').dispatchEvent(new Event('change'));
+    if (document.getElementById('id_report_type').value) {
+        document.getElementById('id_report_type').dispatchEvent(new Event('change'));
+    }
+});
+</script>
+{% endblock %}
