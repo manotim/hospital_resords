@@ -9,19 +9,149 @@
         <div class="col-md-8">
             <div class="card">
                 <div class="card-header bg-info text-white">
-                    <h4 class="mb-0">Record Vital Signs for: {{ patient.get_full_name }}</h4>
+                    <h4 class="mb-0">
+                        <i class="fas fa-heartbeat me-2"></i>
+                        Record Vital Signs for: {{ patient.get_full_name }}
+                    </h4>
                 </div>
                 <div class="card-body">
-                    <form method="post">
+                    <div class="alert alert-info small">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Tips:</strong> 
+                        <ul class="mb-0 mt-1">
+                            <li>Blood Pressure: Enter as two numbers (e.g., 120/80)</li>
+                            <li>Temperature: Use decimal point (e.g., 98.6)</li>
+                            <li>Height in centimeters (cm), Weight in kilograms (kg)</li>
+                            <li>BMI will be calculated automatically</li>
+                        </ul>
+                    </div>
+                    
+                    <form method="post" novalidate>
                         {% csrf_token %}
-                        {{ form|crispy }}
-                        <div class="mt-3">
-                            <button type="submit" class="btn btn-info">
-                                <i class="fas fa-heartbeat"></i> Record Vitals
-                            </button>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">
+                                        <i class="fas fa-heart text-danger me-1"></i>Blood Pressure (Systolic)
+                                    </label>
+                                    {{ form.blood_pressure_systolic }}
+                                    {% if form.blood_pressure_systolic.errors %}
+                                        <div class="text-danger small">{{ form.blood_pressure_systolic.errors }}</div>
+                                    {% endif %}
+                                    <small class="text-muted">Top number (normal: 120)</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">
+                                        <i class="fas fa-heart text-danger me-1"></i>Blood Pressure (Diastolic)
+                                    </label>
+                                    {{ form.blood_pressure_diastolic }}
+                                    {% if form.blood_pressure_diastolic.errors %}
+                                        <div class="text-danger small">{{ form.blood_pressure_diastolic.errors }}</div>
+                                    {% endif %}
+                                    <small class="text-muted">Bottom number (normal: 80)</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">
+                                        <i class="fas fa-heartbeat text-danger me-1"></i>Heart Rate
+                                    </label>
+                                    {{ form.heart_rate }}
+                                    {% if form.heart_rate.errors %}
+                                        <div class="text-danger small">{{ form.heart_rate.errors }}</div>
+                                    {% endif %}
+                                    <small class="text-muted">bpm (normal: 60-100)</small>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">
+                                        <i class="fas fa-thermometer-half text-warning me-1"></i>Temperature
+                                    </label>
+                                    {{ form.temperature }}
+                                    {% if form.temperature.errors %}
+                                        <div class="text-danger small">{{ form.temperature.errors }}</div>
+                                    {% endif %}
+                                    <small class="text-muted">°F (normal: 98.6)</small>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">
+                                        <i class="fas fa-lungs text-primary me-1"></i>Respiratory Rate
+                                    </label>
+                                    {{ form.respiratory_rate }}
+                                    {% if form.respiratory_rate.errors %}
+                                        <div class="text-danger small">{{ form.respiratory_rate.errors }}</div>
+                                    {% endif %}
+                                    <small class="text-muted">breaths/min (normal: 12-20)</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">
+                                        <i class="fas fa-wind text-info me-1"></i>Oxygen Saturation
+                                    </label>
+                                    {{ form.oxygen_saturation }}
+                                    {% if form.oxygen_saturation.errors %}
+                                        <div class="text-danger small">{{ form.oxygen_saturation.errors }}</div>
+                                    {% endif %}
+                                    <small class="text-muted">% (normal: 95-100)</small>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">
+                                        <i class="fas fa-arrow-up text-success me-1"></i>Height
+                                    </label>
+                                    {{ form.height }}
+                                    {% if form.height.errors %}
+                                        <div class="text-danger small">{{ form.height.errors }}</div>
+                                    {% endif %}
+                                    <small class="text-muted">cm (optional)</small>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">
+                                        <i class="fas fa-weight text-success me-1"></i>Weight
+                                    </label>
+                                    {{ form.weight }}
+                                    {% if form.weight.errors %}
+                                        <div class="text-danger small">{{ form.weight.errors }}</div>
+                                    {% endif %}
+                                    <small class="text-muted">kg (optional)</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">
+                                <i class="fas fa-sticky-note text-secondary me-1"></i>Notes
+                            </label>
+                            {{ form.notes }}
+                            {% if form.notes.errors %}
+                                <div class="text-danger small">{{ form.notes.errors }}</div>
+                            {% endif %}
+                            <small class="text-muted">Optional - any additional observations</small>
+                        </div>
+
+                        <div class="mt-4 d-flex justify-content-between">
                             <a href="{% url 'patients:patient_detail' patient.pk %}" class="btn btn-secondary">
-                                <i class="fas fa-times"></i> Cancel
+                                <i class="fas fa-times me-2"></i>Cancel
                             </a>
+                            <button type="submit" class="btn btn-info">
+                                <i class="fas fa-heartbeat me-2"></i>Record Vital Signs
+                            </button>
                         </div>
                     </form>
                 </div>
@@ -29,4 +159,42 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Auto-format temperature to one decimal place
+        const tempField = document.querySelector('[name="temperature"]');
+        if (tempField) {
+            tempField.addEventListener('blur', function() {
+                if (this.value && !isNaN(this.value)) {
+                    this.value = parseFloat(this.value).toFixed(1);
+                }
+            });
+        }
+
+        // Add visual feedback for out-of-range values
+        const inputs = document.querySelectorAll('input[type="number"]');
+        inputs.forEach(input => {
+            input.addEventListener('input', function() {
+                const min = parseFloat(this.min);
+                const max = parseFloat(this.max);
+                const value = parseFloat(this.value);
+                
+                if (this.value && !isNaN(value)) {
+                    if (value < min || value > max) {
+                        this.classList.add('is-invalid');
+                        this.classList.remove('is-valid');
+                    } else {
+                        this.classList.remove('is-invalid');
+                        this.classList.add('is-valid');
+                    }
+                } else {
+                    this.classList.remove('is-invalid', 'is-valid');
+                }
+            });
+        });
+    });
+</script>
 {% endblock %}

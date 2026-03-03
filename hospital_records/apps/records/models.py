@@ -133,6 +133,7 @@ class Prescription(models.Model):
     def __str__(self):
         return f"{self.medication_name} - {self.dosage}{self.dosage_unit}"
 
+
 class LabOrder(models.Model):
     """Laboratory test orders"""
     LAB_STATUS = (
@@ -151,7 +152,7 @@ class LabOrder(models.Model):
     
     medical_record = models.ForeignKey(MedicalRecord, on_delete=models.CASCADE, related_name='lab_orders')
     test_name = models.CharField(max_length=200)
-    test_code = models.CharField(max_length=50)
+    test_code = models.CharField(max_length=50, blank=True)  # ✅ Added blank=True
     priority = models.CharField(max_length=20, choices=LAB_PRIORITY, default='routine')
     status = models.CharField(max_length=20, choices=LAB_STATUS, default='ordered')
     ordered_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='lab_orders')
@@ -163,6 +164,7 @@ class LabOrder(models.Model):
     
     def __str__(self):
         return f"{self.test_name} - {self.get_status_display()}"
+
 
 class LabResult(models.Model):
     """Laboratory test results"""

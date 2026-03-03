@@ -35,8 +35,9 @@ class DateRangeForm(forms.Form):
         widget=forms.DateInput(attrs={'type': 'date', 'class': 'form-control'})
     )
 
+
 class ReportGenerationForm(forms.Form):
-    """Form for generating reports"""
+    """Form for generating reports with title selection"""
     REPORT_CHOICES = [
         ('patient_census', 'Patient Census Report'),
         ('admission_discharge', 'Admission & Discharge Summary'),
@@ -52,9 +53,102 @@ class ReportGenerationForm(forms.Form):
         ('department_performance', 'Department Performance'),
     ]
     
+    # Predefined titles for each report type
+    TITLE_CHOICES = {
+        'patient_census': [
+            ('Patient Census Report', 'Patient Census Report'),
+            ('Monthly Patient Census', 'Monthly Patient Census'),
+            ('Department-wise Patient Census', 'Department-wise Patient Census'),
+            ('Custom Title', 'Custom Title...'),
+        ],
+        'admission_discharge': [
+            ('Admission & Discharge Summary', 'Admission & Discharge Summary'),
+            ('Daily Admission Report', 'Daily Admission Report'),
+            ('Discharge Analysis', 'Discharge Analysis'),
+            ('Custom Title', 'Custom Title...'),
+        ],
+        'diagnosis_frequency': [
+            ('Diagnosis Frequency Report', 'Diagnosis Frequency Report'),
+            ('Top 10 Diagnoses', 'Top 10 Diagnoses'),
+            ('ICD-10 Code Analysis', 'ICD-10 Code Analysis'),
+            ('Custom Title', 'Custom Title...'),
+        ],
+        'prescription_analysis': [
+            ('Prescription Analysis', 'Prescription Analysis'),
+            ('Most Prescribed Medications', 'Most Prescribed Medications'),
+            ('Medication Usage Report', 'Medication Usage Report'),
+            ('Custom Title', 'Custom Title...'),
+        ],
+        'lab_utilization': [
+            ('Lab Utilization Report', 'Lab Utilization Report'),
+            ('Lab Test Statistics', 'Lab Test Statistics'),
+            ('Abnormal Results Report', 'Abnormal Results Report'),
+            ('Custom Title', 'Custom Title...'),
+        ],
+        'imaging_utilization': [
+            ('Imaging Utilization Report', 'Imaging Utilization Report'),
+            ('Radiology Department Report', 'Radiology Department Report'),
+            ('Imaging Statistics', 'Imaging Statistics'),
+            ('Custom Title', 'Custom Title...'),
+        ],
+        'patient_demographics': [
+            ('Patient Demographics Report', 'Patient Demographics Report'),
+            ('Age & Gender Distribution', 'Age & Gender Distribution'),
+            ('Patient Population Analysis', 'Patient Population Analysis'),
+            ('Custom Title', 'Custom Title...'),
+        ],
+        'length_of_stay': [
+            ('Length of Stay Analysis', 'Length of Stay Analysis'),
+            ('Average LOS Report', 'Average LOS Report'),
+            ('Department LOS Comparison', 'Department LOS Comparison'),
+            ('Custom Title', 'Custom Title...'),
+        ],
+        'readmission_rate': [
+            ('Readmission Rate Report', 'Readmission Rate Report'),
+            ('30-Day Readmission Analysis', '30-Day Readmission Analysis'),
+            ('Readmission Risk Factors', 'Readmission Risk Factors'),
+            ('Custom Title', 'Custom Title...'),
+        ],
+        'mortality_rate': [
+            ('Mortality Rate Report', 'Mortality Rate Report'),
+            ('Mortality Analysis', 'Mortality Analysis'),
+            ('Outcome Statistics', 'Outcome Statistics'),
+            ('Custom Title', 'Custom Title...'),
+        ],
+        'physician_workload': [
+            ('Physician Workload Report', 'Physician Workload Report'),
+            ('Doctor Productivity Analysis', 'Doctor Productivity Analysis'),
+            ('Department Workload Distribution', 'Department Workload Distribution'),
+            ('Custom Title', 'Custom Title...'),
+        ],
+        'department_performance': [
+            ('Department Performance Report', 'Department Performance Report'),
+            ('Department KPIs', 'Department KPIs'),
+            ('Performance Metrics', 'Performance Metrics'),
+            ('Custom Title', 'Custom Title...'),
+        ],
+    }
+    
     report_type = forms.ChoiceField(
         choices=REPORT_CHOICES,
-        widget=forms.Select(attrs={'class': 'form-select'})
+        widget=forms.Select(attrs={'class': 'form-select', 'id': 'id_report_type'})
+    )
+    
+    title_option = forms.ChoiceField(
+        choices=[('', '-- Select Title --')],
+        required=True,
+        widget=forms.Select(attrs={'class': 'form-select', 'id': 'id_title_option'})
+    )
+    
+    custom_title = forms.CharField(
+        max_length=200,
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control', 
+            'placeholder': 'Enter custom report title',
+            'id': 'id_custom_title',
+            'style': 'display: none;'
+        })
     )
     
     format = forms.ChoiceField(
@@ -66,11 +160,6 @@ class ReportGenerationForm(forms.Form):
         ],
         initial='pdf',
         widget=forms.Select(attrs={'class': 'form-select'})
-    )
-    
-    title = forms.CharField(
-        max_length=200,
-        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter report title'})
     )
     
     # Optional filters
@@ -110,7 +199,39 @@ class ReportGenerationForm(forms.Form):
         required=False,
         widget=forms.CheckboxInput(attrs={'class': 'form-check-input'})
     )
-
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+        # Set initial title choices based on default report type
+        if 'initial' not in kwargs:
+            self.fields['title_option'].choices = self.get_title_choices('patient_census')
+    
+    def get_title_choices(self, report_type):
+        """Get title choices for a specific report type"""
+        choices = [('', '-- Select Title --')]
+        if report_type in self.TITLE_CHOICES:
+            choices.extend(self.TITLE_CHOICES[report_type])
+        return choices
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        report_type = cleaned_data.get('report_type')
+        title_option = cleaned_data.get('title_option')
+        custom_title = cleaned_data.get('custom_title')
+        
+        # Set the actual title based on selection
+        if title_option == 'Custom Title...':
+            if not custom_title:
+                self.add_error('custom_title', 'Please enter a custom title')
+            else:
+                cleaned_data['title'] = custom_title
+        elif title_option:
+            cleaned_data['title'] = title_option
+        else:
+            self.add_error('title_option', 'Please select a title')
+        
+        return cleaned_data
 
 
 class PatientCensusForm(forms.Form):
@@ -159,6 +280,7 @@ class DiagnosisFrequencyForm(forms.Form):
         widget=forms.NumberInput(attrs={'class': 'form-control'})
     )
 
+
 class PrescriptionAnalysisForm(forms.Form):
     """Form for prescription analysis"""
     ANALYSIS_TYPE = [
@@ -185,6 +307,7 @@ class PrescriptionAnalysisForm(forms.Form):
         required=False,
         widget=forms.Select(attrs={'class': 'form-select'})
     )
+
 
 class LabUtilizationForm(forms.Form):
     """Form for lab utilization report"""
@@ -213,6 +336,7 @@ class LabUtilizationForm(forms.Form):
         widget=forms.Select(attrs={'class': 'form-select'})
     )
 
+
 class ScheduledReportForm(forms.ModelForm):
     """Form for scheduling reports"""
     class Meta:
@@ -240,6 +364,7 @@ class ScheduledReportForm(forms.ModelForm):
             email_list = [email.strip() for email in recipients.split(',') if email.strip()]
             return email_list
         return recipients
+
 
 class DashboardWidgetForm(forms.ModelForm):
     """Form for dashboard widgets"""

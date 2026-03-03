@@ -19,6 +19,7 @@ urlpatterns = [
     # Lab Orders and Results
     path('lab/order/<int:record_id>/', views.order_lab, name='order_lab'),
     path('lab/<int:pk>/', views.lab_detail, name='lab_detail'),
+    path('lab-orders/', views.lab_orders_list, name='lab_orders_list'),
     path('lab/<int:pk>/add-result/', views.add_lab_result, name='add_lab_result'),
     path('lab/<int:pk>/verify/', views.verify_lab_result, name='verify_lab_result'),
     

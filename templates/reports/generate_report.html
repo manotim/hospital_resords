@@ -17,14 +17,30 @@
                         
                         <!-- Report Type -->
                         <div class="mb-3">
-                            <label for="{{ form.report_type.id_for_label }}" class="form-label">Report Type</label>
+                            <label for="{{ form.report_type.id_for_label }}" class="form-label fw-bold">Report Type</label>
                             {{ form.report_type }}
+                            {% if form.report_type.errors %}
+                                <div class="text-danger small">{{ form.report_type.errors }}</div>
+                            {% endif %}
                         </div>
                         
-                        <!-- Title -->
+                        <!-- Title Selection -->
                         <div class="mb-3">
-                            <label for="{{ form.title.id_for_label }}" class="form-label">Report Title</label>
-                            {{ form.title }}
+                            <label for="{{ form.title_option.id_for_label }}" class="form-label fw-bold">Report Title</label>
+                            {{ form.title_option }}
+                            {% if form.title_option.errors %}
+                                <div class="text-danger small">{{ form.title_option.errors }}</div>
+                            {% endif %}
+                            <small class="text-muted">Select a predefined title or choose "Custom Title" to enter your own</small>
+                        </div>
+                        
+                        <!-- Custom Title (hidden by default) -->
+                        <div class="mb-3" id="customTitleContainer" style="display: none;">
+                            <label for="{{ form.custom_title.id_for_label }}" class="form-label fw-bold">Custom Title</label>
+                            {{ form.custom_title }}
+                            {% if form.custom_title.errors %}
+                                <div class="text-danger small">{{ form.custom_title.errors }}</div>
+                            {% endif %}
                         </div>
                         
                         <!-- Date Range -->
@@ -53,15 +69,46 @@
                         
                         <!-- Format -->
                         <div class="mb-3">
-                            <label for="{{ form.format.id_for_label }}" class="form-label">Output Format</label>
+                            <label for="{{ form.format.id_for_label }}" class="form-label fw-bold">Output Format</label>
                             {{ form.format }}
                         </div>
                         
-                        <!-- Additional Options (shown/hidden based on report type) -->
-                        <div id="reportSpecificOptions"></div>
+                        <!-- Department Filter (shown/hidden based on report type) -->
+                        <div class="mb-3" id="departmentFilter" style="display: none;">
+                            <label for="{{ form.department.id_for_label }}" class="form-label">Department</label>
+                            {{ form.department }}
+                        </div>
+                        
+                        <!-- Physician Filter (shown/hidden based on report type) -->
+                        <div class="mb-3" id="physicianFilter" style="display: none;">
+                            <label for="{{ form.physician.id_for_label }}" class="form-label">Physician</label>
+                            {{ form.physician }}
+                        </div>
+                        
+                        <!-- Include Options -->
+                        <div class="row mb-3" id="includeOptions" style="display: none;">
+                            <div class="col-md-6">
+                                <div class="form-check">
+                                    {{ form.include_charts }}
+                                    <label class="form-check-label" for="{{ form.include_charts.id_for_label }}">
+                                        Include Charts
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check">
+                                    {{ form.include_tables }}
+                                    <label class="form-check-label" for="{{ form.include_tables.id_for_label }}">
+                                        Include Tables
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
                         
                         <div class="text-end">
-                            <a href="{% url 'reports:dashboard' %}" class="btn btn-secondary">Cancel</a>
+                            <a href="{% url 'reports:dashboard' %}" class="btn btn-secondary">
+                                <i class="fas fa-times me-2"></i>Cancel
+                            </a>
                             <button type="submit" class="btn btn-primary">
                                 <i class="fas fa-file-export me-2"></i>Generate Report
                             </button>
@@ -76,26 +123,169 @@
 
 {% block extra_js %}
 <script>
-// Show/hide custom date range
-document.getElementById('id_date_range').addEventListener('change', function() {
-    const customRange = document.getElementById('customDateRange');
-    customRange.style.display = this.value === 'custom' ? 'flex' : 'none';
-});
+document.addEventListener('DOMContentLoaded', function() {
+    const reportTypeSelect = document.getElementById('id_report_type');
+    const titleOptionSelect = document.getElementById('id_title_option');
+    const customTitleContainer = document.getElementById('customTitleContainer');
+    const customTitleInput = document.getElementById('id_custom_title');
+    const dateRangeSelect = document.getElementById('id_date_range');
+    const customDateRange = document.getElementById('customDateRange');
+    const departmentFilter = document.getElementById('departmentFilter');
+    const physicianFilter = document.getElementById('physicianFilter');
+    const includeOptions = document.getElementById('includeOptions');
 
-// Load report-specific options based on report type
-document.getElementById('id_report_type').addEventListener('change', function() {
-    const reportType = this.value;
-    const optionsContainer = document.getElementById('reportSpecificOptions');
-    
-    if (reportType) {
-        fetch(`/reports/api/options/${reportType}/`)
-            .then(response => response.text())
-            .then(html => {
-                optionsContainer.innerHTML = html;
-            });
-    } else {
-        optionsContainer.innerHTML = '';
+    // Title choices for each report type (from Django form)
+    const titleChoices = {
+        'patient_census': [
+            {value: 'Patient Census Report', label: 'Patient Census Report'},
+            {value: 'Monthly Patient Census', label: 'Monthly Patient Census'},
+            {value: 'Department-wise Patient Census', label: 'Department-wise Patient Census'},
+            {value: 'Custom Title...', label: 'Custom Title...'}
+        ],
+        'admission_discharge': [
+            {value: 'Admission & Discharge Summary', label: 'Admission & Discharge Summary'},
+            {value: 'Daily Admission Report', label: 'Daily Admission Report'},
+            {value: 'Discharge Analysis', label: 'Discharge Analysis'},
+            {value: 'Custom Title...', label: 'Custom Title...'}
+        ],
+        'diagnosis_frequency': [
+            {value: 'Diagnosis Frequency Report', label: 'Diagnosis Frequency Report'},
+            {value: 'Top 10 Diagnoses', label: 'Top 10 Diagnoses'},
+            {value: 'ICD-10 Code Analysis', label: 'ICD-10 Code Analysis'},
+            {value: 'Custom Title...', label: 'Custom Title...'}
+        ],
+        'prescription_analysis': [
+            {value: 'Prescription Analysis', label: 'Prescription Analysis'},
+            {value: 'Most Prescribed Medications', label: 'Most Prescribed Medications'},
+            {value: 'Medication Usage Report', label: 'Medication Usage Report'},
+            {value: 'Custom Title...', label: 'Custom Title...'}
+        ],
+        'lab_utilization': [
+            {value: 'Lab Utilization Report', label: 'Lab Utilization Report'},
+            {value: 'Lab Test Statistics', label: 'Lab Test Statistics'},
+            {value: 'Abnormal Results Report', label: 'Abnormal Results Report'},
+            {value: 'Custom Title...', label: 'Custom Title...'}
+        ],
+        'imaging_utilization': [
+            {value: 'Imaging Utilization Report', label: 'Imaging Utilization Report'},
+            {value: 'Radiology Department Report', label: 'Radiology Department Report'},
+            {value: 'Imaging Statistics', label: 'Imaging Statistics'},
+            {value: 'Custom Title...', label: 'Custom Title...'}
+        ],
+        'patient_demographics': [
+            {value: 'Patient Demographics Report', label: 'Patient Demographics Report'},
+            {value: 'Age & Gender Distribution', label: 'Age & Gender Distribution'},
+            {value: 'Patient Population Analysis', label: 'Patient Population Analysis'},
+            {value: 'Custom Title...', label: 'Custom Title...'}
+        ],
+        'length_of_stay': [
+            {value: 'Length of Stay Analysis', label: 'Length of Stay Analysis'},
+            {value: 'Average LOS Report', label: 'Average LOS Report'},
+            {value: 'Department LOS Comparison', label: 'Department LOS Comparison'},
+            {value: 'Custom Title...', label: 'Custom Title...'}
+        ],
+        'readmission_rate': [
+            {value: 'Readmission Rate Report', label: 'Readmission Rate Report'},
+            {value: '30-Day Readmission Analysis', label: '30-Day Readmission Analysis'},
+            {value: 'Readmission Risk Factors', label: 'Readmission Risk Factors'},
+            {value: 'Custom Title...', label: 'Custom Title...'}
+        ],
+        'mortality_rate': [
+            {value: 'Mortality Rate Report', label: 'Mortality Rate Report'},
+            {value: 'Mortality Analysis', label: 'Mortality Analysis'},
+            {value: 'Outcome Statistics', label: 'Outcome Statistics'},
+            {value: 'Custom Title...', label: 'Custom Title...'}
+        ],
+        'physician_workload': [
+            {value: 'Physician Workload Report', label: 'Physician Workload Report'},
+            {value: 'Doctor Productivity Analysis', label: 'Doctor Productivity Analysis'},
+            {value: 'Department Workload Distribution', label: 'Department Workload Distribution'},
+            {value: 'Custom Title...', label: 'Custom Title...'}
+        ],
+        'department_performance': [
+            {value: 'Department Performance Report', label: 'Department Performance Report'},
+            {value: 'Department KPIs', label: 'Department KPIs'},
+            {value: 'Performance Metrics', label: 'Performance Metrics'},
+            {value: 'Custom Title...', label: 'Custom Title...'}
+        ]
+    };
+
+    // Update title options when report type changes
+    function updateTitleOptions() {
+        const reportType = reportTypeSelect.value;
+        const choices = titleChoices[reportType] || [];
+        
+        // Clear current options
+        titleOptionSelect.innerHTML = '<option value="">-- Select Title --</option>';
+        
+        // Add new options
+        choices.forEach(choice => {
+            const option = document.createElement('option');
+            option.value = choice.value;
+            option.textContent = choice.label;
+            titleOptionSelect.appendChild(option);
+        });
+        
+        // Hide custom title container initially
+        customTitleContainer.style.display = 'none';
+        customTitleInput.value = '';
+        
+        // Show/hide filters based on report type
+        const reportsWithDepartment = ['patient_census', 'admission_discharge', 'physician_workload', 'department_performance'];
+        const reportsWithPhysician = ['physician_workload', 'prescription_analysis', 'diagnosis_frequency'];
+        const reportsWithInclude = ['patient_census', 'diagnosis_frequency', 'prescription_analysis', 'lab_utilization'];
+        
+        departmentFilter.style.display = reportsWithDepartment.includes(reportType) ? 'block' : 'none';
+        physicianFilter.style.display = reportsWithPhysician.includes(reportType) ? 'block' : 'none';
+        includeOptions.style.display = reportsWithInclude.includes(reportType) ? 'flex' : 'none';
     }
+
+    // Handle title option change
+    function handleTitleChange() {
+        const selectedValue = titleOptionSelect.value;
+        if (selectedValue === 'Custom Title...') {
+            customTitleContainer.style.display = 'block';
+            customTitleInput.required = true;
+        } else {
+            customTitleContainer.style.display = 'none';
+            customTitleInput.required = false;
+            customTitleInput.value = '';
+        }
+    }
+
+    // Handle date range change
+    function handleDateRangeChange() {
+        customDateRange.style.display = dateRangeSelect.value === 'custom' ? 'flex' : 'none';
+    }
+
+    // Add event listeners
+    reportTypeSelect.addEventListener('change', updateTitleOptions);
+    titleOptionSelect.addEventListener('change', handleTitleChange);
+    dateRangeSelect.addEventListener('change', handleDateRangeChange);
+
+    // Initialize on page load
+    updateTitleOptions();
+    handleDateRangeChange();
+
+    // Form validation
+    document.getElementById('reportForm').addEventListener('submit', function(e) {
+        const titleOption = titleOptionSelect.value;
+        const customTitle = customTitleInput.value;
+        
+        if (!titleOption) {
+            e.preventDefault();
+            alert('Please select a report title');
+            titleOptionSelect.focus();
+            return;
+        }
+        
+        if (titleOption === 'Custom Title...' && !customTitle.trim()) {
+            e.preventDefault();
+            alert('Please enter a custom title');
+            customTitleInput.focus();
+            return;
+        }
+    });
 });
 </script>
 {% endblock %}

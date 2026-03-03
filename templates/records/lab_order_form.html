@@ -12,35 +12,99 @@
                     <h4 class="mb-0">{{ title }}</h4>
                 </div>
                 <div class="card-body">
-                    <p class="mb-3">
-                        <strong>Patient:</strong> {{ record.patient.get_full_name }}<br>
+                    <div class="alert alert-info mb-4">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Patient:</strong> {{ record.patient.get_full_name }} ({{ record.patient.patient_id }})<br>
                         <strong>Record #:</strong> {{ record.record_number }}
-                    </p>
+                    </div>
                     
-                    <form method="post" novalidate>
+                    {% if form.errors %}
+                    <div class="alert alert-danger">
+                        <strong>Please correct the following errors:</strong>
+                        <ul class="mb-0 mt-2">
+                            {% for field in form %}
+                                {% for error in field.errors %}
+                                    <li><strong>{{ field.label }}:</strong> {{ error }}</li>
+                                {% endfor %}
+                            {% endfor %}
+                            {% for error in form.non_field_errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+                    
+                    <form method="post" novalidate id="labOrderForm">
                         {% csrf_token %}
                         
                         <div class="row">
-                            <div class="col-md-6">{{ form.test_name|as_crispy_field }}</div>
-                            <div class="col-md-6">{{ form.test_code|as_crispy_field }}</div>
+                            <div class="col-md-8">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">
+                                        Test Name <span class="text-danger">*</span>
+                                    </label>
+                                    {{ form.test_name }}
+                                    {% if form.test_name.errors %}
+                                        <div class="text-danger small mt-1">{{ form.test_name.errors.0 }}</div>
+                                    {% endif %}
+                                    <small class="text-muted">{{ form.test_name.help_text }}</small>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Test Code</label>
+                                    {{ form.test_code }}
+                                    {% if form.test_code.errors %}
+                                        <div class="text-danger small mt-1">{{ form.test_code.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
                         </div>
                         
                         <div class="row">
-                            <div class="col-md-4">{{ form.priority|as_crispy_field }}</div>
-                            <div class="col-md-4">{{ form.specimen_type|as_crispy_field }}</div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">
+                                        Priority <span class="text-danger">*</span>
+                                    </label>
+                                    {{ form.priority }}
+                                    {% if form.priority.errors %}
+                                        <div class="text-danger small mt-1">{{ form.priority.errors.0 }}</div>
+                                    {% endif %}
+                                    <small class="text-muted">{{ form.priority.help_text }}</small>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Specimen Type</label>
+                                    {{ form.specimen_type }}
+                                    {% if form.specimen_type.errors %}
+                                        <div class="text-danger small mt-1">{{ form.specimen_type.errors.0 }}</div>
+                                    {% endif %}
+                                    <small class="text-muted">{{ form.specimen_type.help_text }}</small>
+                                </div>
+                            </div>
                         </div>
                         
                         <div class="row">
-                            <div class="col-12">{{ form.clinical_notes|as_crispy_field }}</div>
+                            <div class="col-12">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Clinical Notes</label>
+                                    {{ form.clinical_notes }}
+                                    {% if form.clinical_notes.errors %}
+                                        <div class="text-danger small mt-1">{{ form.clinical_notes.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
                         </div>
                         
-                        <div class="mt-4">
-                            <button type="submit" class="btn btn-primary">
+                        <div class="mt-4 d-flex justify-content-between">
+                            <a href="{% url 'records:record_detail' record.pk %}" class="btn btn-secondary">
+                                <i class="fas fa-times me-2"></i>Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary" id="submitBtn">
                                 <i class="fas fa-save me-2"></i>Order Lab Test
                             </button>
-                            <a href="{% url 'records:record_detail' record.pk %}" class="btn btn-secondary">
-                                Cancel
-                            </a>
                         </div>
                     </form>
                 </div>
@@ -48,4 +112,86 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('labOrderForm');
+        const submitBtn = document.getElementById('submitBtn');
+        
+        form.addEventListener('submit', function(e) {
+            let isValid = true;
+            let firstInvalid = null;
+            
+            // Clear previous error states
+            document.querySelectorAll('.is-invalid').forEach(el => {
+                el.classList.remove('is-invalid');
+            });
+            
+            // Check required fields
+            const testName = document.querySelector('[name="test_name"]');
+            const priority = document.querySelector('[name="priority"]');
+            
+            if (!testName.value.trim()) {
+                testName.classList.add('is-invalid');
+                isValid = false;
+                if (!firstInvalid) firstInvalid = testName;
+                
+                // Add error message if not exists
+                let errorDiv = testName.parentNode.querySelector('.invalid-feedback');
+                if (!errorDiv) {
+                    errorDiv = document.createElement('div');
+                    errorDiv.className = 'invalid-feedback';
+                    errorDiv.textContent = 'Test name is required';
+                    testName.parentNode.appendChild(errorDiv);
+                }
+            }
+            
+            if (!priority.value) {
+                priority.classList.add('is-invalid');
+                isValid = false;
+                if (!firstInvalid) firstInvalid = priority;
+                
+                let errorDiv = priority.parentNode.querySelector('.invalid-feedback');
+                if (!errorDiv) {
+                    errorDiv = document.createElement('div');
+                    errorDiv.className = 'invalid-feedback';
+                    errorDiv.textContent = 'Please select a priority';
+                    priority.parentNode.appendChild(errorDiv);
+                }
+            }
+            
+            if (!isValid) {
+                e.preventDefault();
+                if (firstInvalid) {
+                    firstInvalid.focus();
+                }
+            } else {
+                // Disable button to prevent double submission
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Ordering...';
+            }
+        });
+        
+        // Real-time validation
+        const testNameInput = document.querySelector('[name="test_name"]');
+        if (testNameInput) {
+            testNameInput.addEventListener('input', function() {
+                if (this.value.trim()) {
+                    this.classList.remove('is-invalid');
+                }
+            });
+        }
+        
+        const prioritySelect = document.querySelector('[name="priority"]');
+        if (prioritySelect) {
+            prioritySelect.addEventListener('change', function() {
+                if (this.value) {
+                    this.classList.remove('is-invalid');
+                }
+            });
+        }
+    });
+</script>
 {% endblock %}

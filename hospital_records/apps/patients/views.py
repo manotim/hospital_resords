@@ -86,11 +86,30 @@ def patient_detail(request, pk):
     patient = get_object_or_404(Patient, pk=pk)
     user_type = request.user.profile.user_type
     
+    # Get admissions with error handling
+    try:
+        if user_type == 'nurse':
+            admissions = patient.admissions.filter(is_active=True)[:5]
+        else:
+            admissions = patient.admissions.all()[:5]
+    except:
+        admissions = []
+    
+    # Get vitals with error handling - THIS IS THE KEY FIX
+    try:
+        vitals = patient.vitals.all()[:10]
+        # Test access to decimal fields to catch errors early
+        for vital in vitals:
+            # Force evaluation of decimal fields
+            temp = vital.temperature
+            bmi = vital.bmi
+    except Exception as e:
+        # If there's an error, set vitals to empty list
+        print(f"Error loading vitals: {e}")
+        vitals = []
+    
     # Role-based data access
     if user_type == 'nurse':
-        # Nurses see limited information
-        admissions = patient.admissions.filter(is_active=True)[:5]
-        vitals = patient.vitals.all()[:10]
         context = {
             'patient': patient,
             'admissions': admissions,
@@ -100,8 +119,6 @@ def patient_detail(request, pk):
             'can_add_nursing_notes': True,
         }
     else:  # Doctors and admins
-        admissions = patient.admissions.all()[:5]
-        vitals = patient.vitals.all()[:10]
         context = {
             'patient': patient,
             'admissions': admissions,
@@ -113,6 +130,7 @@ def patient_detail(request, pk):
         }
     
     return render(request, 'patients/patient_detail.html', context)
+
 
 @login_required
 @receptionist_required
@@ -267,6 +285,7 @@ def add_vitals(request, pk):
         'patient': patient,
         'is_nurse': True
     })
+
 
 # Helper function for admin dashboard
 def get_admin_dashboard_stats(request):

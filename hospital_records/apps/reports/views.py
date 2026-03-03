@@ -12,20 +12,9 @@ from django.views.decorators.csrf import ensure_csrf_cookie
 from django.core.mail import send_mail
 from django.conf import settings
 import json
-from .report_generators import (
-    stream_csv_response,
-    generate_medical_records_csv,
-    generate_diagnosis_frequency_csv,
-    generate_prescription_analysis_csv,
-    generate_lab_utilization_csv,
-    generate_imaging_utilization_csv,
-    generate_procedure_analysis_csv,
-    generate_patient_visit_summary_csv
-)
 import csv
 import xlwt
 from datetime import datetime, timedelta
-from django.utils import timezone
 from weasyprint import HTML
 import tempfile
 
@@ -39,6 +28,16 @@ from .forms import (
     DateRangeForm, ReportGenerationForm, PatientCensusForm,
     DiagnosisFrequencyForm, PrescriptionAnalysisForm, LabUtilizationForm,
     ScheduledReportForm, DashboardWidgetForm
+)
+from .report_generators import (
+    stream_csv_response,
+    generate_medical_records_csv,
+    generate_diagnosis_frequency_csv,
+    generate_prescription_analysis_csv,
+    generate_lab_utilization_csv,
+    generate_imaging_utilization_csv,
+    generate_procedure_analysis_csv,
+    generate_patient_visit_summary_csv
 )
 
 # Import role decorators
@@ -144,8 +143,9 @@ def report_dashboard(request):
     context['widgets'] = widget_data
     return render(request, 'reports/dashboard.html', context)
 
+
 @login_required
-@role_required(['admin', 'doctor', 'receptionist'])  # Only admin, doctors, and receptionists can generate reports
+@role_required(['admin', 'doctor', 'receptionist'])
 def generate_report(request):
     """Generate a new report"""
     if request.method == 'POST':
@@ -154,7 +154,7 @@ def generate_report(request):
         
         if form.is_valid() and date_form.is_valid():
             report_type = form.cleaned_data['report_type']
-            title = form.cleaned_data['title']
+            title = form.cleaned_data['title']  # Now comes from the form's clean method
             report_format = form.cleaned_data['format']
             
             # Check if user has permission for this report type
@@ -222,6 +222,7 @@ def generate_report(request):
     }
     return render(request, 'reports/generate_report.html', context)
 
+
 @login_required
 def view_report(request, pk):
     """View a generated report"""
@@ -237,6 +238,7 @@ def view_report(request, pk):
     }
     return render(request, 'reports/view_report.html', context)
 
+
 @login_required
 def download_report(request, pk):
     """Download a generated report file"""
@@ -250,8 +252,9 @@ def download_report(request, pk):
     response['Content-Disposition'] = f'attachment; filename="{report.report_file.name}"'
     return response
 
+
 @login_required
-@role_required(['admin'])  # Only admin can manage scheduled reports
+@role_required(['admin'])
 def scheduled_reports(request):
     """Manage scheduled reports"""
     schedules = ScheduledReport.objects.filter(created_by=request.user)
@@ -261,8 +264,9 @@ def scheduled_reports(request):
     }
     return render(request, 'reports/scheduled_reports.html', context)
 
+
 @login_required
-@role_required(['admin'])  # Only admin can create schedules
+@role_required(['admin'])
 def create_schedule(request):
     """Create a new scheduled report"""
     if request.method == 'POST':
@@ -289,8 +293,9 @@ def create_schedule(request):
     }
     return render(request, 'reports/schedule_form.html', context)
 
+
 @login_required
-@role_required(['admin'])  # Only admin can edit schedules
+@role_required(['admin'])
 def edit_schedule(request, pk):
     """Edit a scheduled report"""
     schedule = get_object_or_404(ScheduledReport, pk=pk, created_by=request.user)
@@ -320,8 +325,9 @@ def edit_schedule(request, pk):
     }
     return render(request, 'reports/schedule_form.html', context)
 
+
 @login_required
-@role_required(['admin'])  # Only admin can delete schedules
+@role_required(['admin'])
 def delete_schedule(request, pk):
     """Delete a scheduled report"""
     schedule = get_object_or_404(ScheduledReport, pk=pk, created_by=request.user)
@@ -336,8 +342,9 @@ def delete_schedule(request, pk):
     }
     return render(request, 'reports/schedule_confirm_delete.html', context)
 
+
 @login_required
-@role_required(['admin', 'doctor', 'receptionist'])  # These roles can access patient census
+@role_required(['admin', 'doctor', 'receptionist'])
 @ensure_csrf_cookie
 def patient_census_report(request):
     """Generate patient census report as CSV download"""
@@ -495,8 +502,9 @@ def patient_census_report(request):
     }
     return render(request, 'reports/report_form.html', context)
 
+
 @login_required
-@role_required(['admin', 'doctor'])  # Only admin and doctors can access medical records reports
+@role_required(['admin', 'doctor'])
 def medical_records_report(request):
     """Generate medical records report"""
     if request.method == 'POST':
@@ -553,8 +561,9 @@ def medical_records_report(request):
     }
     return render(request, 'reports/report_form.html', context)
 
+
 @login_required
-@role_required(['admin', 'doctor'])  # Only admin and doctors can access diagnosis frequency
+@role_required(['admin', 'doctor'])
 def diagnosis_frequency_report(request):
     """Generate diagnosis frequency report as CSV download"""
     if request.method == 'POST':
@@ -623,8 +632,9 @@ def diagnosis_frequency_report(request):
     }
     return render(request, 'reports/report_form.html', context)
 
+
 @login_required
-@role_required(['admin', 'doctor'])  # Only admin and doctors can access prescription analysis
+@role_required(['admin', 'doctor'])
 def prescription_analysis_report(request):
     """Generate prescription analysis report as CSV download"""
     if request.method == 'POST':
@@ -698,8 +708,9 @@ def prescription_analysis_report(request):
     }
     return render(request, 'reports/report_form.html', context)
 
+
 @login_required
-@role_required(['admin', 'doctor', 'lab_tech'])  # Lab techs can also access lab reports
+@role_required(['admin', 'doctor', 'lab_tech'])
 def lab_utilization_report(request):
     """Generate lab utilization report as CSV download"""
     if request.method == 'POST':
@@ -779,11 +790,11 @@ def lab_utilization_report(request):
     }
     return render(request, 'reports/report_form.html', context)
 
+
 @login_required
-@role_required(['admin', 'doctor'])  # Only admin and doctors
+@role_required(['admin', 'doctor'])
 def imaging_utilization_report(request):
     """Generate imaging utilization report"""
-    # This is a placeholder - you can implement the full functionality
     if request.method == 'POST':
         date_form = DateRangeForm(request.POST)
         
@@ -826,8 +837,9 @@ def imaging_utilization_report(request):
     }
     return render(request, 'reports/report_form.html', context)
 
+
 @login_required
-@role_required(['admin', 'doctor'])  # Only admin and doctors
+@role_required(['admin', 'doctor'])
 def procedure_analysis_report(request):
     """Generate procedure analysis report"""
     if request.method == 'POST':
@@ -841,7 +853,7 @@ def procedure_analysis_report(request):
             response['Content-Disposition'] = f'attachment; filename="{filename}"'
             
             writer = csv.writer(response)
-            writer.writerow(['Procedure Name', 'Count', 'Performed By', 'Avg Duration'])
+            writer.writerow(['Procedure Name', 'Count', 'Performed By'])
             
             procedure_stats = Procedure.objects.filter(
                 date_performed__range=[start_date, end_date]
@@ -855,7 +867,6 @@ def procedure_analysis_report(request):
                     item['procedure_name'],
                     item['count'],
                     doctor_name or 'Unknown',
-                    'N/A'  # You can add duration calculation if you have this field
                 ])
             
             return response
@@ -870,8 +881,9 @@ def procedure_analysis_report(request):
     }
     return render(request, 'reports/report_form.html', context)
 
+
 @login_required
-@role_required(['admin', 'receptionist'])  # Receptionists can access patient demographics
+@role_required(['admin', 'receptionist'])
 def patient_demographics_report(request):
     """Generate patient demographics report"""
     if request.method == 'POST':
@@ -910,7 +922,26 @@ def patient_demographics_report(request):
                             date_of_birth__lte=timezone.now().date() - timedelta(days=19*365),
                             date_of_birth__gte=timezone.now().date() - timedelta(days=35*365)
                         )
-                    # Add other age groups similarly...
+                    elif age_group == '36-50':
+                        patients = Patient.objects.filter(
+                            registration_date__range=[start_date, end_date],
+                            gender=gender,
+                            date_of_birth__lte=timezone.now().date() - timedelta(days=36*365),
+                            date_of_birth__gte=timezone.now().date() - timedelta(days=50*365)
+                        )
+                    elif age_group == '51-65':
+                        patients = Patient.objects.filter(
+                            registration_date__range=[start_date, end_date],
+                            gender=gender,
+                            date_of_birth__lte=timezone.now().date() - timedelta(days=51*365),
+                            date_of_birth__gte=timezone.now().date() - timedelta(days=65*365)
+                        )
+                    else:  # 65+
+                        patients = Patient.objects.filter(
+                            registration_date__range=[start_date, end_date],
+                            gender=gender,
+                            date_of_birth__lte=timezone.now().date() - timedelta(days=65*365)
+                        )
                     
                     count = patients.count()
                     percentage = (count / total_patients * 100) if total_patients > 0 else 0
@@ -929,7 +960,8 @@ def patient_demographics_report(request):
     }
     return render(request, 'reports/report_form.html', context)
 
-# Helper functions for generating report data (ALL KEPT INTACT)
+
+# Helper functions for generating report data
 
 def get_date_range(date_form):
     """Extract date range from form"""
@@ -985,6 +1017,7 @@ def get_date_range(date_form):
     
     return start_date, end_date
 
+
 def generate_patient_census(start_date, end_date, params):
     """Generate patient census data for display"""
     data = {
@@ -1025,6 +1058,7 @@ def generate_patient_census(start_date, end_date, params):
         })
     
     return data
+
 
 def generate_medical_records_summary(start_date, end_date):
     """Generate medical records summary"""
@@ -1077,6 +1111,7 @@ def generate_medical_records_summary(start_date, end_date):
     
     return data
 
+
 def generate_diagnosis_frequency(start_date, end_date, params):
     """Generate diagnosis frequency data"""
     diagnoses = Diagnosis.objects.filter(
@@ -1101,6 +1136,7 @@ def generate_diagnosis_frequency(start_date, end_date, params):
     
     return data
 
+
 def generate_prescription_analysis(start_date, end_date, params):
     """Generate prescription analysis data"""
     prescriptions = Prescription.objects.filter(
@@ -1123,6 +1159,7 @@ def generate_prescription_analysis(start_date, end_date, params):
         })
     
     return data
+
 
 def generate_lab_utilization(start_date, end_date, params):
     """Generate lab utilization data"""
@@ -1158,6 +1195,7 @@ def generate_lab_utilization(start_date, end_date, params):
     
     return data
 
+
 def generate_imaging_utilization(start_date, end_date):
     """Generate imaging utilization data"""
     imaging_orders = ImagingOrder.objects.filter(
@@ -1180,6 +1218,7 @@ def generate_imaging_utilization(start_date, end_date):
         })
     
     return data
+
 
 def generate_patient_demographics(start_date, end_date):
     """Generate patient demographics data"""
@@ -1233,6 +1272,7 @@ def generate_patient_demographics(start_date, end_date):
     
     return data
 
+
 def generate_physician_workload(start_date, end_date):
     """Generate physician workload report"""
     from django.contrib.auth.models import User
@@ -1275,6 +1315,7 @@ def generate_physician_workload(start_date, end_date):
     
     return data
 
+
 def generate_procedure_analysis(start_date, end_date):
     """Generate procedure analysis data"""
     procedures = Procedure.objects.filter(
@@ -1312,6 +1353,7 @@ def generate_procedure_analysis(start_date, end_date):
     
     return data
 
+
 def generate_widget_data(widget):
     """Generate data for dashboard widget"""
     end_date = timezone.now()
@@ -1342,6 +1384,7 @@ def generate_widget_data(widget):
     else:
         return {}
 
+
 def generate_pdf_report(report):
     """Generate PDF file for report"""
     try:
@@ -1362,6 +1405,7 @@ def generate_pdf_report(report):
         report.status = 'failed'
         report.error_message = str(e)
         report.save()
+
 
 def generate_excel_report(report):
     """Generate Excel file for report"""
@@ -1406,6 +1450,7 @@ def generate_excel_report(report):
         report.error_message = str(e)
         report.save()
 
+
 def generate_csv_report(report):
     """Generate CSV file for report"""
     try:
@@ -1442,6 +1487,7 @@ def generate_csv_report(report):
         report.status = 'failed'
         report.error_message = str(e)
         report.save()
+
 
 # API endpoints for AJAX calls
 
@@ -1488,8 +1534,9 @@ def api_report_data(request, report_type):
     
     return JsonResponse(data)
 
+
 @login_required
-@role_required(['admin'])  # Only admin can save widgets
+@role_required(['admin'])
 def api_save_widget(request):
     """API endpoint to save dashboard widget configuration"""
     if request.method == 'POST':
@@ -1510,6 +1557,7 @@ def api_save_widget(request):
             return JsonResponse({'success': False, 'error': str(e)}, status=400)
     
     return JsonResponse({'error': 'Method not allowed'}, status=405)
+
 
 # Download views using report_generators
 @login_required
@@ -1535,6 +1583,7 @@ def medical_records_report_download(request):
     
     return redirect('reports:medical_records')
 
+
 @login_required
 @role_required(['admin', 'doctor'])
 def diagnosis_frequency_report_download(request):
@@ -1557,6 +1606,7 @@ def diagnosis_frequency_report_download(request):
             )
     
     return redirect('reports:diagnosis_frequency')
+
 
 @login_required
 @role_required(['admin', 'doctor'])
@@ -1581,6 +1631,7 @@ def prescription_analysis_report_download(request):
     
     return redirect('reports:prescription_analysis')
 
+
 @login_required
 @role_required(['admin', 'doctor', 'lab_tech'])
 def lab_utilization_report_download(request):
@@ -1604,6 +1655,7 @@ def lab_utilization_report_download(request):
     
     return redirect('reports:lab_utilization')
 
+
 @login_required
 @role_required(['admin', 'doctor'])
 def imaging_utilization_report_download(request):
@@ -1624,6 +1676,7 @@ def imaging_utilization_report_download(request):
             )
     
     return redirect('reports:imaging_utilization')
+
 
 @login_required
 @role_required(['admin', 'doctor'])
@@ -1646,6 +1699,7 @@ def procedure_analysis_report_download(request):
     
     return redirect('reports:procedure_analysis')
 
+
 @login_required
 @role_required(['admin', 'receptionist', 'doctor'])
 def patient_visit_summary_report_download(request):
@@ -1667,6 +1721,7 @@ def patient_visit_summary_report_download(request):
     
     return redirect('reports:patient_visit_summary')
 
+
 # Helper function to check report permissions
 def has_report_permission(user_type, report_type):
     """Check if user type has permission for specific report type"""
@@ -1684,6 +1739,7 @@ def has_report_permission(user_type, report_type):
     
     allowed_roles = permissions.get(report_type, ['admin'])
     return user_type in allowed_roles
+
 
 def has_api_report_permission(user_type, report_type):
     """Check if user type has permission for API report data"""

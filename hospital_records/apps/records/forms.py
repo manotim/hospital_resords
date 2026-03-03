@@ -66,20 +66,54 @@ class PrescriptionForm(forms.ModelForm):
             'status': forms.Select(attrs={'class': 'form-select'}),
         }
 
+
 class LabOrderForm(forms.ModelForm):
     class Meta:
         model = LabOrder
-        exclude = ['medical_record', 'ordered_by', 'ordered_date']
+        exclude = ['medical_record', 'ordered_by', 'ordered_date', 'status', 'collected_date', 'collected_by']
         widgets = {
-            'test_name': forms.TextInput(attrs={'class': 'form-control'}),
-            'test_code': forms.TextInput(attrs={'class': 'form-control'}),
+            'test_name': forms.TextInput(attrs={
+                'class': 'form-control', 
+                'placeholder': 'e.g., Complete Blood Count, Lipid Panel'
+            }),
+            'test_code': forms.TextInput(attrs={
+                'class': 'form-control', 
+                'placeholder': 'e.g., CBC001 (optional)'
+            }),
             'priority': forms.Select(attrs={'class': 'form-select'}),
-            'status': forms.Select(attrs={'class': 'form-select'}),
-            'collected_date': forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'form-control'}),
-            'collected_by': forms.Select(attrs={'class': 'form-select'}),
-            'specimen_type': forms.TextInput(attrs={'class': 'form-control'}),
-            'clinical_notes': forms.Textarea(attrs={'rows': 3, 'class': 'form-control'}),
+            'specimen_type': forms.TextInput(attrs={
+                'class': 'form-control', 
+                'placeholder': 'e.g., Blood, Urine, Stool (optional)'
+            }),
+            'clinical_notes': forms.Textarea(attrs={
+                'rows': 3, 
+                'class': 'form-control',
+                'placeholder': 'Any specific instructions or clinical context...'
+            }),
         }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+        # Set required fields
+        self.fields['test_name'].required = True
+        self.fields['test_code'].required = False  # Now optional
+        self.fields['priority'].required = True
+        self.fields['specimen_type'].required = False
+        self.fields['clinical_notes'].required = False
+        
+        # Add help text
+        self.fields['test_name'].help_text = "Enter the name of the lab test"
+        self.fields['test_code'].help_text = "Optional - enter test code if available"
+        self.fields['priority'].help_text = "STAT = Immediate, Urgent = Within 2 hours, Routine = Within 24 hours"
+        self.fields['specimen_type'].help_text = "Type of specimen to be collected (optional)"
+    
+    def clean_test_name(self):
+        test_name = self.cleaned_data.get('test_name')
+        if test_name and len(test_name.strip()) < 3:
+            raise forms.ValidationError("Test name must be at least 3 characters long")
+        return test_name
+
 
 class LabResultForm(forms.ModelForm):
     class Meta:

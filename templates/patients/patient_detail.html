@@ -14,7 +14,7 @@
                         <i class="fas fa-user-injured me-2"></i>Patient Information
                     </h4>
                     <div>
-                        <span class="status-badge status-{{ patient.status }} me-2">
+                        <span class="badge {% if patient.status == 'active' %}bg-success{% elif patient.status == 'discharged' %}bg-secondary{% else %}bg-warning{% endif %} me-2 p-2">
                             {{ patient.get_status_display }}
                         </span>
                         
@@ -22,7 +22,7 @@
                         {% if user.profile.user_type == 'doctor' or user.profile.user_type == 'admin' %}
                             {% if patient.status != 'active' %}
                             <a href="{% url 'patients:admit_patient' patient.pk %}" class="btn btn-sm btn-success">
-                                <i class="fas fa-procedures me-1"></i>Admit Patient
+                                <i class="fas fa-procedures me-1"></i>Admit
                             </a>
                             {% endif %}
                             <a href="{% url 'patients:patient_edit' patient.pk %}" class="btn btn-sm btn-warning">
@@ -31,6 +31,9 @@
                         {% elif user.profile.user_type == 'nurse' %}
                             <a href="{% url 'patients:add_vitals' patient.pk %}" class="btn btn-sm btn-info">
                                 <i class="fas fa-heartbeat me-1"></i>Record Vitals
+                            </a>
+                            <a href="{% url 'patients:patient_edit' patient.pk %}" class="btn btn-sm btn-warning">
+                                <i class="fas fa-edit me-1"></i>Edit
                             </a>
                         {% elif user.profile.user_type == 'receptionist' %}
                             <a href="{% url 'patients:patient_edit' patient.pk %}" class="btn btn-sm btn-warning">
@@ -46,15 +49,71 @@
                         {% endif %}
                     </div>
                 </div>
-                <!-- Rest of the patient info card remains the same -->
                 <div class="card-body">
-                    <!-- ... existing patient info table ... -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <table class="table table-borderless">
+                                <tr>
+                                    <th width="150">Patient ID:</th>
+                                    <td><strong>{{ patient.patient_id }}</strong></td>
+                                </tr>
+                                <tr>
+                                    <th>Full Name:</th>
+                                    <td>{{ patient.get_full_name }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Date of Birth:</th>
+                                    <td>{{ patient.date_of_birth|date:"F d, Y" }} ({{ patient.age }} years)</td>
+                                </tr>
+                                <tr>
+                                    <th>Gender:</th>
+                                    <td>{{ patient.get_gender_display }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Blood Group:</th>
+                                    <td><span class="badge bg-danger">{{ patient.blood_group }}</span></td>
+                                </tr>
+                                <tr>
+                                    <th>Marital Status:</th>
+                                    <td>{{ patient.get_marital_status_display }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <table class="table table-borderless">
+                                <tr>
+                                    <th width="150">Phone:</th>
+                                    <td>{{ patient.phone_number }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Email:</th>
+                                    <td>{{ patient.email|default:"Not provided" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Address:</th>
+                                    <td>{{ patient.address }}, {{ patient.city }}, {{ patient.state }} {{ patient.zip_code }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Registration Date:</th>
+                                    <td>{{ patient.registration_date|date:"F d, Y" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Registered By:</th>
+                                    <td>{{ patient.registered_by.get_full_name|default:"System" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Last Visit:</th>
+                                    <td>{{ patient.last_visit|date:"F d, Y"|default:"No visits yet" }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
     
-    <!-- Emergency Contact and Insurance - All staff can view -->
+    <!-- Emergency Contact and Insurance -->
     <div class="row mb-4">
         <div class="col-md-6">
             <div class="card h-100">
@@ -62,7 +121,20 @@
                     <h5 class="mb-0"><i class="fas fa-phone-alt me-2"></i>Emergency Contact</h5>
                 </div>
                 <div class="card-body">
-                    <!-- ... existing emergency contact info ... -->
+                    <table class="table table-borderless">
+                        <tr>
+                            <th width="150">Name:</th>
+                            <td>{{ patient.emergency_contact_name }}</td>
+                        </tr>
+                        <tr>
+                            <th>Phone:</th>
+                            <td>{{ patient.emergency_contact_phone }}</td>
+                        </tr>
+                        <tr>
+                            <th>Relation:</th>
+                            <td>{{ patient.emergency_contact_relation }}</td>
+                        </tr>
+                    </table>
                 </div>
             </div>
         </div>
@@ -73,7 +145,24 @@
                     <h5 class="mb-0"><i class="fas fa-shield-alt me-2"></i>Insurance Information</h5>
                 </div>
                 <div class="card-body">
-                    <!-- ... existing insurance info ... -->
+                    {% if patient.insurance_provider %}
+                    <table class="table table-borderless">
+                        <tr>
+                            <th width="150">Provider:</th>
+                            <td>{{ patient.insurance_provider }}</td>
+                        </tr>
+                        <tr>
+                            <th>Policy Number:</th>
+                            <td>{{ patient.insurance_policy_number }}</td>
+                        </tr>
+                        <tr>
+                            <th>Group Number:</th>
+                            <td>{{ patient.insurance_group_number }}</td>
+                        </tr>
+                    </table>
+                    {% else %}
+                    <p class="text-muted mb-0">No insurance information on file</p>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -130,7 +219,51 @@
                     {% endif %}
                 </div>
                 <div class="card-body">
-                    <!-- ... existing vitals table ... -->
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Date/Time</th>
+                                    <th>BP</th>
+                                    <th>HR</th>
+                                    <th>Temp</th>
+                                    <th>RR</th>
+                                    <th>SpO2</th>
+                                    <th>Recorded By</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for vital in vitals %}
+                                <tr>
+                                    <td>{{ vital.recorded_at|date:"Y-m-d H:i" }}</td>
+                                    <td>{{ vital.blood_pressure_systolic }}/{{ vital.blood_pressure_diastolic }}</td>
+                                    <td>{{ vital.heart_rate }}</td>
+                                    <td>
+                                        {% if vital.temperature %}
+                                            {{ vital.temperature }}°F
+                                        {% else %}
+                                            N/A
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ vital.respiratory_rate }}</td>
+                                    <td>
+                                        {{ vital.oxygen_saturation }}%
+                                        {% if vital.oxygen_saturation and vital.oxygen_saturation < 95 %}
+                                            <i class="fas fa-exclamation-triangle text-danger" title="Low oxygen saturation"></i>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ vital.recorded_by.get_full_name|default:"Unknown" }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="7" class="text-center py-3">
+                                        <p class="text-muted mb-0">No vital signs recorded</p>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
@@ -141,7 +274,42 @@
                     <h5 class="mb-0"><i class="fas fa-history me-2"></i>Admission History</h5>
                 </div>
                 <div class="card-body">
-                    <!-- ... existing admission history ... -->
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Admission Date</th>
+                                    <th>Department</th>
+                                    <th>Doctor</th>
+                                    <th>Discharge Date</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for admission in admissions %}
+                                <tr>
+                                    <td>{{ admission.admission_date|date:"Y-m-d" }}</td>
+                                    <td>{{ admission.department }}</td>
+                                    <td>Dr. {{ admission.admitting_doctor.get_full_name|default:"Not assigned" }}</td>
+                                    <td>{{ admission.discharge_date|date:"Y-m-d"|default:"-" }}</td>
+                                    <td>
+                                        {% if admission.is_active %}
+                                            <span class="badge bg-success">Active</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Discharged</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center py-3">
+                                        <p class="text-muted mb-0">No admission history</p>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
@@ -163,7 +331,42 @@
                     {% endif %}
                 </div>
                 <div class="card-body">
-                    <!-- You can add a table of medical records here -->
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Record #</th>
+                                    <th>Date</th>
+                                    <th>Type</th>
+                                    <th>Doctor</th>
+                                    <th>Chief Complaint</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for record in patient.medical_records.all|slice:":10" %}
+                                <tr>
+                                    <td>{{ record.record_number }}</td>
+                                    <td>{{ record.visit_date|date:"Y-m-d H:i" }}</td>
+                                    <td>{{ record.get_record_type_display }}</td>
+                                    <td>Dr. {{ record.doctor.get_full_name }}</td>
+                                    <td>{{ record.chief_complaint|truncatechars:50 }}</td>
+                                    <td>
+                                        <a href="{% url 'records:record_detail' record.pk %}" class="btn btn-sm btn-info">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="6" class="text-center py-3">
+                                        <p class="text-muted mb-0">No medical records found</p>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>

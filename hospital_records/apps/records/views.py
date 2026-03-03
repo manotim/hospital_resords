@@ -298,8 +298,10 @@ def order_lab(request, record_id):
     user_type = request.user.profile.user_type
     
     if request.method == 'POST':
+        print("POST data:", request.POST)  # Debug print
         form = LabOrderForm(request.POST)
         if form.is_valid():
+            print("Form is valid")  # Debug print
             lab_order = form.save(commit=False)
             lab_order.medical_record = record
             lab_order.ordered_by = request.user
@@ -307,6 +309,7 @@ def order_lab(request, record_id):
             messages.success(request, 'Lab test ordered successfully')
             return redirect('records:lab_detail', pk=lab_order.pk)
         else:
+            print("Form errors:", form.errors)  # Debug print
             messages.error(request, 'Please correct the errors below.')
     else:
         # Pre-populate form with record information if available
@@ -323,6 +326,71 @@ def order_lab(request, record_id):
         'user_type': user_type,
     }
     return render(request, 'records/lab_order_form.html', context)
+
+
+
+@login_required
+@medical_staff_required
+def lab_orders_list(request):
+    """Display all lab orders with filtering options"""
+    user_type = request.user.profile.user_type
+    
+    # Get filter parameters
+    status = request.GET.get('status', '')
+    priority = request.GET.get('priority', '')
+    patient_name = request.GET.get('patient', '')
+    date_from = request.GET.get('date_from', '')
+    date_to = request.GET.get('date_to', '')
+    
+    # Base queryset
+    lab_orders = LabOrder.objects.select_related(
+        'medical_record__patient', 
+        'ordered_by',
+        'result'
+    ).all().order_by('-ordered_date')
+    
+    # Apply filters
+    if status:
+        lab_orders = lab_orders.filter(status=status)
+    
+    if priority:
+        lab_orders = lab_orders.filter(priority=priority)
+    
+    if patient_name:
+        lab_orders = lab_orders.filter(
+            Q(medical_record__patient__first_name__icontains=patient_name) |
+            Q(medical_record__patient__last_name__icontains=patient_name) |
+            Q(medical_record__patient__patient_id__icontains=patient_name)
+        )
+    
+    if date_from:
+        lab_orders = lab_orders.filter(ordered_date__date__gte=date_from)
+    
+    if date_to:
+        lab_orders = lab_orders.filter(ordered_date__date__lte=date_to)
+    
+    # Statistics
+    total_orders = lab_orders.count()
+    pending_orders = lab_orders.filter(status='ordered').count()
+    collected_orders = lab_orders.filter(status='collected').count()
+    completed_orders = lab_orders.filter(status='completed').count()
+    
+    context = {
+        'lab_orders': lab_orders,
+        'total_orders': total_orders,
+        'pending_orders': pending_orders,
+        'collected_orders': collected_orders,
+        'completed_orders': completed_orders,
+        'status': status,
+        'priority': priority,
+        'patient_name': patient_name,
+        'date_from': date_from,
+        'date_to': date_to,
+        'user_type': user_type,
+        'status_choices': LabOrder.LAB_STATUS,
+        'priority_choices': LabOrder.LAB_PRIORITY,
+    }
+    return render(request, 'records/lab_orders_list.html', context)
 
 
 @login_required
