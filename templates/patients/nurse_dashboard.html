@@ -1,0 +1,328 @@
+{% extends 'base.html' %}
+
+{% block title %}Nurse Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Welcome, {{ user.get_full_name|default:user.username }}</h2>
+        <div>
+            <span class="badge bg-info p-3">
+                <i class="fas fa-calendar me-2"></i>{% now "F j, Y" %}
+            </span>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Pending Vitals</h5>
+                    <h2 class="mb-0">{{ pending_vitals|default:"0" }}</h2>
+                    <small>Patients needing vitals today</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Vitals Today</h5>
+                    <h2 class="mb-0">{{ vitals_today|default:"0" }}</h2>
+                    <small>Recorded by you today</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Active Patients</h5>
+                    <h2 class="mb-0">{{ active_patients|default:"0" }}</h2>
+                    <small>Currently admitted</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Medications Today</h5>
+                    <h2 class="mb-0">{{ medications_today|default:"0" }}</h2>
+                    <small>Scheduled for today</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">Quick Actions</h5>
+                </div>
+                <div class="card-body">
+                    <button type="button" class="btn btn-primary me-2" data-bs-toggle="modal" data-bs-target="#selectPatientVitalsModal">
+                        <i class="fas fa-heartbeat me-2"></i>Record Vitals
+                    </button>
+                    <a href="{% url 'patients:patient_list' %}" class="btn btn-info me-2">
+                        <i class="fas fa-users me-2"></i>Patient List
+                    </a>
+                    <a href="{% url 'records:nursing_notes' %}" class="btn btn-warning">
+                        <i class="fas fa-pen me-2"></i>Nursing Notes
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Current Admissions -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Current Admissions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Patient ID</th>
+                                    <th>Patient Name</th>
+                                    <th>Department</th>
+                                    <th>Ward/Bed</th>
+                                    <th>Admission Date</th>
+                                    <th>Doctor</th>
+                                    <th>Last Vitals</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for admission in current_admissions %}
+                                <tr>
+                                    <td>{{ admission.patient.patient_id }}</td>
+                                    <td>{{ admission.patient.get_full_name }}</td>
+                                    <td>{{ admission.department }}</td>
+                                    <td>{{ admission.ward_number }}/{{ admission.bed_number }}</td>
+                                    <td>{{ admission.admission_date|date:"Y-m-d H:i" }}</td>
+                                    <td>Dr. {{ admission.admitting_doctor.get_full_name }}</td>
+                                    <td>
+                                        {% with last_vital=admission.patient.vitals.first %}
+                                            {% if last_vital %}
+                                                <span class="badge bg-success">{{ last_vital.recorded_at|timesince }} ago</span>
+                                            {% else %}
+                                                <span class="badge bg-warning">No vitals</span>
+                                            {% endif %}
+                                        {% endwith %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a href="{% url 'patients:patient_detail' admission.patient.pk %}" class="btn btn-sm btn-info" title="View">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <a href="{% url 'patients:add_vitals' admission.patient.pk %}" class="btn btn-sm btn-success" title="Record Vitals">
+                                                <i class="fas fa-heartbeat"></i>
+                                            </a>
+                                            {% with first_record=admission.patient.medical_records.first %}
+                                                {% if first_record %}
+                                                <a href="{% url 'records:add_clinical_note' first_record.pk %}" class="btn btn-sm btn-warning" title="Add Nursing Note">
+                                                    <i class="fas fa-pen"></i>
+                                                </a>
+                                                {% else %}
+                                                <button class="btn btn-sm btn-secondary" disabled title="No medical record found">
+                                                    <i class="fas fa-pen"></i>
+                                                </button>
+                                                {% endif %}
+                                            {% endwith %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="8" class="text-center">No active admissions</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Two Column Layout for Additional Info -->
+    <div class="row">
+        <!-- Abnormal Vitals Alert -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-exclamation-triangle me-2"></i>Abnormal Vitals
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if abnormal_vitals %}
+                        <div class="list-group">
+                            {% for vital in abnormal_vitals %}
+                            <div class="list-group-item list-group-item-danger">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <strong>{{ vital.patient.get_full_name }}</strong><br>
+                                        <small class="text-muted">BP: {{ vital.blood_pressure_systolic }}/{{ vital.blood_pressure_diastolic }} | 
+                                               HR: {{ vital.heart_rate }} | 
+                                               SpO2: {{ vital.oxygen_saturation }}%</small>
+                                    </div>
+                                    <a href="{% url 'patients:patient_detail' vital.patient.pk %}" class="btn btn-sm btn-outline-danger">
+                                        View
+                                    </a>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted mb-0">No abnormal vitals recorded today</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Today's Nursing Notes -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-notes-medical me-2"></i>My Nursing Notes Today
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <h3 class="text-center">{{ nursing_notes_today|default:"0" }}</h3>
+                    <p class="text-center text-muted">Notes added today</p>
+                    <div class="text-center">
+                        <a href="{% url 'records:record_list' %}?type=nursing&date=today" class="btn btn-sm btn-info">
+                            View My Notes
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Vitals Recorded -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">Recently Recorded Vitals</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Time</th>
+                                    <th>Patient</th>
+                                    <th>BP</th>
+                                    <th>HR</th>
+                                    <th>Temp</th>
+                                    <th>SpO2</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for vital in recent_vitals %}
+                                <tr>
+                                    <td>{{ vital.recorded_at|time:"H:i" }}</td>
+                                    <td>{{ vital.patient.get_full_name }}</td>
+                                    <td>{{ vital.blood_pressure_systolic }}/{{ vital.blood_pressure_diastolic }}</td>
+                                    <td>{{ vital.heart_rate }}</td>
+                                    <td>{{ vital.temperature }}°F</td>
+                                    <td>{{ vital.oxygen_saturation }}%</td>
+                                    <td>
+                                        <a href="{% url 'patients:patient_detail' vital.patient.pk %}" class="btn btn-sm btn-info">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="7" class="text-center">No vitals recorded yet today</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Patient Selection Modal for Vitals -->
+<div class="modal fade" id="selectPatientVitalsModal" tabindex="-1" aria-labelledby="selectPatientVitalsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="selectPatientVitalsModalLabel">
+                    <i class="fas fa-heartbeat me-2"></i>Select Patient to Record Vitals
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <input type="text" id="vitalPatientSearch" class="form-control" placeholder="Search patients by name or ID...">
+                </div>
+                <div class="table-responsive" style="max-height: 400px;">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Patient ID</th>
+                                <th>Name</th>
+                                <th>Age/Gender</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="vitalPatientList">
+                            {% for patient in active_patients_list %}
+                            <tr class="patient-row">
+                                <td>{{ patient.patient_id }}</td>
+                                <td>{{ patient.get_full_name }}</td>
+                                <td>{{ patient.age }}/{{ patient.get_gender_display }}</td>
+                                <td>
+                                    <span class="badge {% if patient.status == 'active' %}bg-success{% else %}bg-secondary{% endif %}">
+                                        {{ patient.get_status_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <a href="{% url 'patients:add_vitals' patient.pk %}" class="btn btn-sm btn-success">
+                                        <i class="fas fa-heartbeat me-1"></i>Record Vitals
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Search functionality for vitals modal
+    const searchInput = document.getElementById('vitalPatientSearch');
+    if (searchInput) {
+        searchInput.addEventListener('keyup', function() {
+            const searchText = this.value.toLowerCase();
+            const rows = document.querySelectorAll('#vitalPatientList .patient-row');
+            
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(searchText) ? '' : 'none';
+            });
+        });
+    }
+});
+</script>
+{% endblock %}

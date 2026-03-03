@@ -1,3 +1,4 @@
+<!-- templates/patients/patient_form.html -->
 {% extends 'base.html' %}
 {% load static %}
 
@@ -39,7 +40,7 @@
                         </div>
                         {% endif %}
 
-                        <!-- Personal Information Section -->
+                        <!-- Personal Information Section - All staff can edit -->
                         <div class="card mb-2">
                             <div class="card-header bg-light py-2">
                                 <h5 class="mb-0 fs-6">
@@ -47,6 +48,7 @@
                                 </h5>
                             </div>
                             <div class="card-body py-2">
+                                <!-- All personal info fields - visible to everyone -->
                                 <div class="row g-2">
                                     <div class="col-md-4">
                                         <label class="form-label mb-1">First Name <span class="text-danger">*</span></label>
@@ -86,7 +88,7 @@
                             </div>
                         </div>
 
-                        <!-- Contact Information Section -->
+                        <!-- Contact Information Section - All staff can edit -->
                         <div class="card mb-2">
                             <div class="card-header bg-light py-2">
                                 <h5 class="mb-0 fs-6">
@@ -94,6 +96,7 @@
                                 </h5>
                             </div>
                             <div class="card-body py-2">
+                                <!-- All contact fields - visible to everyone -->
                                 <div class="row g-2">
                                     <div class="col-md-6">
                                         <label class="form-label mb-1">Phone Number <span class="text-danger">*</span></label>
@@ -127,7 +130,7 @@
                             </div>
                         </div>
 
-                        <!-- Emergency Contact Section -->
+                        <!-- Emergency Contact Section - All staff can edit -->
                         <div class="card mb-2">
                             <div class="card-header bg-light py-2">
                                 <h5 class="mb-0 fs-6">
@@ -152,7 +155,8 @@
                             </div>
                         </div>
 
-                        <!-- Medical Information Section -->
+                        <!-- Medical Information Section - Clinical staff only -->
+                        {% if user.profile.user_type == 'doctor' or user.profile.user_type == 'nurse' or user.profile.user_type == 'admin' %}
                         <div class="card mb-2">
                             <div class="card-header bg-light py-2">
                                 <h5 class="mb-0 fs-6">
@@ -181,8 +185,10 @@
                                 </div>
                             </div>
                         </div>
+                        {% endif %}
 
-                        <!-- Insurance Information Section -->
+                        <!-- Insurance Information Section - Receptionists and Admins only -->
+                        {% if user.profile.user_type == 'receptionist' or user.profile.user_type == 'admin' %}
                         <div class="card mb-2">
                             <div class="card-header bg-light py-2">
                                 <h5 class="mb-0 fs-6">
@@ -206,6 +212,7 @@
                                 </div>
                             </div>
                         </div>
+                        {% endif %}
 
                         <!-- Form Actions -->
                         <div class="d-flex justify-content-end gap-2 mt-3">

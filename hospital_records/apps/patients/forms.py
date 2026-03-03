@@ -1,5 +1,7 @@
+# hospital_records/apps/patients/forms.py
 from django import forms
 from .models import Patient, Admission, VitalSign
+from django.contrib.auth.models import User
 
 class PatientForm(forms.ModelForm):
     date_of_birth = forms.DateField(
@@ -33,6 +35,28 @@ class PatientForm(forms.ModelForm):
             'insurance_policy_number': forms.TextInput(attrs={'class': 'form-control'}),
             'insurance_group_number': forms.TextInput(attrs={'class': 'form-control'}),
         }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+        # Make primary_physician NOT required
+        self.fields['primary_physician'].required = False
+        self.fields['primary_physician'].empty_label = "--- Select Doctor (Optional) ---"
+        
+        # Filter to show only doctors in the dropdown
+        doctors = User.objects.filter(profile__user_type='doctor').order_by('first_name')
+        self.fields['primary_physician'].queryset = doctors
+        
+        # Make other fields optional (though they already have blank=True in model)
+        self.fields['allergies'].required = False
+        self.fields['chronic_conditions'].required = False
+        self.fields['current_medications'].required = False
+        self.fields['insurance_provider'].required = False
+        self.fields['insurance_policy_number'].required = False
+        self.fields['insurance_group_number'].required = False
+        
+        # Add help text to clarify
+        self.fields['primary_physician'].help_text = "Select a primary doctor for this patient (optional)"
 
 
 class AdmissionForm(forms.ModelForm):

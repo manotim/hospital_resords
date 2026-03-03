@@ -41,22 +41,56 @@ from .forms import (
     ScheduledReportForm, DashboardWidgetForm
 )
 
+# Import role decorators
+from hospital_records.apps.accounts.decorators import (
+    role_required, doctor_required, clinical_staff_required,
+    receptionist_required, lab_tech_required
+)
+
 logger = logging.getLogger(__name__)
 
 @login_required
 def report_dashboard(request):
-    """Main reports dashboard"""
-    recent_reports = GeneratedReport.objects.filter(
-        generated_by=request.user
-    ).order_by('-generated_at')[:10]
+    """Main reports dashboard - Role-based access"""
+    user_type = request.user.profile.user_type
     
-    scheduled_reports = ScheduledReport.objects.filter(
-        created_by=request.user,
-        is_active=True
-    )
+    # Base context with common data
+    context = {
+        'recent_reports': GeneratedReport.objects.filter(
+            generated_by=request.user
+        ).order_by('-generated_at')[:10],
+        'scheduled_reports': ScheduledReport.objects.filter(
+            created_by=request.user,
+            is_active=True
+        ),
+        'report_categories': ReportTemplate.REPORT_CATEGORIES,
+    }
     
-    # Get dashboard widgets
-    widgets = DashboardWidget.objects.filter(is_active=True)
+    # Get dashboard widgets based on role
+    if user_type == 'admin':
+        widgets = DashboardWidget.objects.filter(is_active=True)
+    elif user_type == 'doctor':
+        widgets = DashboardWidget.objects.filter(
+            is_active=True,
+            report_type__in=['patient_census', 'diagnosis_frequency', 'prescription_analysis']
+        )
+    elif user_type == 'nurse':
+        widgets = DashboardWidget.objects.filter(
+            is_active=True,
+            report_type__in=['patient_census', 'vital_signs']
+        )
+    elif user_type == 'receptionist':
+        widgets = DashboardWidget.objects.filter(
+            is_active=True,
+            report_type__in=['patient_census', 'admissions']
+        )
+    elif user_type == 'lab_tech':
+        widgets = DashboardWidget.objects.filter(
+            is_active=True,
+            report_type__in=['lab_utilization']
+        )
+    else:
+        widgets = DashboardWidget.objects.none()
     
     # Generate widget data
     widget_data = []
@@ -67,15 +101,51 @@ def report_dashboard(request):
             'data': data
         })
     
-    context = {
-        'recent_reports': recent_reports,
-        'scheduled_reports': scheduled_reports,
-        'widgets': widget_data,
-        'report_categories': ReportTemplate.REPORT_CATEGORIES,
-    }
+    # Role-specific statistics
+    today = timezone.now().date()
+    
+    if user_type == 'admin':
+        context.update({
+            'total_patients': Patient.objects.count(),
+            'active_admissions': Patient.objects.filter(status='active').count(),
+            'today_visits': MedicalRecord.objects.filter(visit_date__date=today).count(),
+            'pending_labs': LabOrder.objects.filter(status__in=['ordered', 'collected']).count(),
+        })
+    elif user_type == 'doctor':
+        context.update({
+            'my_patients': Patient.objects.filter(primary_physician=request.user).count(),
+            'my_records': MedicalRecord.objects.filter(doctor=request.user, visit_date__date=today).count(),
+            'pending_labs': LabOrder.objects.filter(
+                medical_record__doctor=request.user,
+                status__in=['ordered', 'collected']
+            ).count(),
+        })
+    elif user_type == 'nurse':
+        from hospital_records.apps.patients.models import VitalSign
+        context.update({
+            'vitals_today': VitalSign.objects.filter(recorded_at__date=today).count(),
+            'active_patients': Patient.objects.filter(status='active').count(),
+        })
+    elif user_type == 'receptionist':
+        from hospital_records.apps.patients.models import Admission
+        context.update({
+            'new_registrations': Patient.objects.filter(registration_date__date=today).count(),
+            'admissions_today': Admission.objects.filter(admission_date__date=today).count(),
+        })
+    elif user_type == 'lab_tech':
+        context.update({
+            'pending_tests': LabOrder.objects.filter(status='ordered').count(),
+            'completed_today': LabOrder.objects.filter(
+                status='completed',
+                result__performed_date__date=today
+            ).count(),
+        })
+    
+    context['widgets'] = widget_data
     return render(request, 'reports/dashboard.html', context)
 
 @login_required
+@role_required(['admin', 'doctor', 'receptionist'])  # Only admin, doctors, and receptionists can generate reports
 def generate_report(request):
     """Generate a new report"""
     if request.method == 'POST':
@@ -86,6 +156,12 @@ def generate_report(request):
             report_type = form.cleaned_data['report_type']
             title = form.cleaned_data['title']
             report_format = form.cleaned_data['format']
+            
+            # Check if user has permission for this report type
+            user_type = request.user.profile.user_type
+            if not has_report_permission(user_type, report_type):
+                messages.error(request, f'You do not have permission to generate {report_type} reports.')
+                return redirect('reports:dashboard')
             
             # Get date range
             start_date, end_date = get_date_range(date_form)
@@ -175,6 +251,7 @@ def download_report(request, pk):
     return response
 
 @login_required
+@role_required(['admin'])  # Only admin can manage scheduled reports
 def scheduled_reports(request):
     """Manage scheduled reports"""
     schedules = ScheduledReport.objects.filter(created_by=request.user)
@@ -185,6 +262,7 @@ def scheduled_reports(request):
     return render(request, 'reports/scheduled_reports.html', context)
 
 @login_required
+@role_required(['admin'])  # Only admin can create schedules
 def create_schedule(request):
     """Create a new scheduled report"""
     if request.method == 'POST':
@@ -212,6 +290,7 @@ def create_schedule(request):
     return render(request, 'reports/schedule_form.html', context)
 
 @login_required
+@role_required(['admin'])  # Only admin can edit schedules
 def edit_schedule(request, pk):
     """Edit a scheduled report"""
     schedule = get_object_or_404(ScheduledReport, pk=pk, created_by=request.user)
@@ -242,6 +321,7 @@ def edit_schedule(request, pk):
     return render(request, 'reports/schedule_form.html', context)
 
 @login_required
+@role_required(['admin'])  # Only admin can delete schedules
 def delete_schedule(request, pk):
     """Delete a scheduled report"""
     schedule = get_object_or_404(ScheduledReport, pk=pk, created_by=request.user)
@@ -257,6 +337,7 @@ def delete_schedule(request, pk):
     return render(request, 'reports/schedule_confirm_delete.html', context)
 
 @login_required
+@role_required(['admin', 'doctor', 'receptionist'])  # These roles can access patient census
 @ensure_csrf_cookie
 def patient_census_report(request):
     """Generate patient census report as CSV download"""
@@ -410,11 +491,12 @@ def patient_census_report(request):
         'form': form,
         'date_form': date_form,
         'title': 'Patient Census Report',
+        'user_type': request.user.profile.user_type,
     }
     return render(request, 'reports/report_form.html', context)
 
-    
 @login_required
+@role_required(['admin', 'doctor'])  # Only admin and doctors can access medical records reports
 def medical_records_report(request):
     """Generate medical records report"""
     if request.method == 'POST':
@@ -467,10 +549,12 @@ def medical_records_report(request):
         'form': form,
         'date_form': date_form,
         'title': 'Medical Records Report',
+        'user_type': request.user.profile.user_type,
     }
     return render(request, 'reports/report_form.html', context)
 
 @login_required
+@role_required(['admin', 'doctor'])  # Only admin and doctors can access diagnosis frequency
 def diagnosis_frequency_report(request):
     """Generate diagnosis frequency report as CSV download"""
     if request.method == 'POST':
@@ -535,10 +619,12 @@ def diagnosis_frequency_report(request):
         'form': form,
         'date_form': date_form,
         'title': 'Diagnosis Frequency Report',
+        'user_type': request.user.profile.user_type,
     }
     return render(request, 'reports/report_form.html', context)
 
 @login_required
+@role_required(['admin', 'doctor'])  # Only admin and doctors can access prescription analysis
 def prescription_analysis_report(request):
     """Generate prescription analysis report as CSV download"""
     if request.method == 'POST':
@@ -608,10 +694,12 @@ def prescription_analysis_report(request):
         'form': form,
         'date_form': date_form,
         'title': 'Prescription Analysis Report',
+        'user_type': request.user.profile.user_type,
     }
     return render(request, 'reports/report_form.html', context)
 
 @login_required
+@role_required(['admin', 'doctor', 'lab_tech'])  # Lab techs can also access lab reports
 def lab_utilization_report(request):
     """Generate lab utilization report as CSV download"""
     if request.method == 'POST':
@@ -687,15 +775,166 @@ def lab_utilization_report(request):
         'form': form,
         'date_form': date_form,
         'title': 'Lab Utilization Report',
+        'user_type': request.user.profile.user_type,
     }
     return render(request, 'reports/report_form.html', context)
 
-# Helper functions for generating report data
+@login_required
+@role_required(['admin', 'doctor'])  # Only admin and doctors
+def imaging_utilization_report(request):
+    """Generate imaging utilization report"""
+    # This is a placeholder - you can implement the full functionality
+    if request.method == 'POST':
+        date_form = DateRangeForm(request.POST)
+        
+        if date_form.is_valid():
+            start_date, end_date = get_date_range(date_form)
+            
+            response = HttpResponse(content_type='text/csv')
+            filename = f"imaging_utilization_{start_date.strftime('%Y%m%d')}_to_{end_date.strftime('%Y%m%d')}.csv"
+            response['Content-Disposition'] = f'attachment; filename="{filename}"'
+            
+            writer = csv.writer(response)
+            writer.writerow(['Imaging Type', 'Body Part', 'Count', 'Completed', 'Pending'])
+            
+            imaging_stats = ImagingOrder.objects.filter(
+                ordered_date__range=[start_date, end_date]
+            ).values('imaging_type', 'body_part').annotate(
+                total=Count('id'),
+                completed=Count('id', filter=Q(status='completed')),
+                pending=Count('id', filter=Q(status__in=['ordered', 'scheduled']))
+            ).order_by('-total')
+            
+            for item in imaging_stats.iterator():
+                writer.writerow([
+                    item['imaging_type'],
+                    item['body_part'],
+                    item['total'],
+                    item['completed'],
+                    item['pending']
+                ])
+            
+            return response
+    
+    else:
+        date_form = DateRangeForm()
+    
+    context = {
+        'date_form': date_form,
+        'title': 'Imaging Utilization Report',
+        'user_type': request.user.profile.user_type,
+    }
+    return render(request, 'reports/report_form.html', context)
+
+@login_required
+@role_required(['admin', 'doctor'])  # Only admin and doctors
+def procedure_analysis_report(request):
+    """Generate procedure analysis report"""
+    if request.method == 'POST':
+        date_form = DateRangeForm(request.POST)
+        
+        if date_form.is_valid():
+            start_date, end_date = get_date_range(date_form)
+            
+            response = HttpResponse(content_type='text/csv')
+            filename = f"procedure_analysis_{start_date.strftime('%Y%m%d')}_to_{end_date.strftime('%Y%m%d')}.csv"
+            response['Content-Disposition'] = f'attachment; filename="{filename}"'
+            
+            writer = csv.writer(response)
+            writer.writerow(['Procedure Name', 'Count', 'Performed By', 'Avg Duration'])
+            
+            procedure_stats = Procedure.objects.filter(
+                date_performed__range=[start_date, end_date]
+            ).values('procedure_name', 'performed_by__first_name', 'performed_by__last_name').annotate(
+                count=Count('id')
+            ).order_by('-count')
+            
+            for item in procedure_stats.iterator():
+                doctor_name = f"{item['performed_by__first_name'] or ''} {item['performed_by__last_name'] or ''}".strip()
+                writer.writerow([
+                    item['procedure_name'],
+                    item['count'],
+                    doctor_name or 'Unknown',
+                    'N/A'  # You can add duration calculation if you have this field
+                ])
+            
+            return response
+    
+    else:
+        date_form = DateRangeForm()
+    
+    context = {
+        'date_form': date_form,
+        'title': 'Procedure Analysis Report',
+        'user_type': request.user.profile.user_type,
+    }
+    return render(request, 'reports/report_form.html', context)
+
+@login_required
+@role_required(['admin', 'receptionist'])  # Receptionists can access patient demographics
+def patient_demographics_report(request):
+    """Generate patient demographics report"""
+    if request.method == 'POST':
+        date_form = DateRangeForm(request.POST)
+        
+        if date_form.is_valid():
+            start_date, end_date = get_date_range(date_form)
+            
+            response = HttpResponse(content_type='text/csv')
+            filename = f"patient_demographics_{start_date.strftime('%Y%m%d')}_to_{end_date.strftime('%Y%m%d')}.csv"
+            response['Content-Disposition'] = f'attachment; filename="{filename}"'
+            
+            writer = csv.writer(response)
+            writer.writerow(['Age Group', 'Gender', 'Count', 'Percentage'])
+            
+            total_patients = Patient.objects.filter(
+                registration_date__range=[start_date, end_date]
+            ).count()
+            
+            # Age groups and gender distribution
+            age_groups = ['0-18', '19-35', '36-50', '51-65', '65+']
+            genders = ['M', 'F', 'O']
+            
+            for age_group in age_groups:
+                for gender in genders:
+                    if age_group == '0-18':
+                        patients = Patient.objects.filter(
+                            registration_date__range=[start_date, end_date],
+                            gender=gender,
+                            date_of_birth__gte=timezone.now().date() - timedelta(days=18*365)
+                        )
+                    elif age_group == '19-35':
+                        patients = Patient.objects.filter(
+                            registration_date__range=[start_date, end_date],
+                            gender=gender,
+                            date_of_birth__lte=timezone.now().date() - timedelta(days=19*365),
+                            date_of_birth__gte=timezone.now().date() - timedelta(days=35*365)
+                        )
+                    # Add other age groups similarly...
+                    
+                    count = patients.count()
+                    percentage = (count / total_patients * 100) if total_patients > 0 else 0
+                    
+                    writer.writerow([age_group, gender, count, f"{percentage:.1f}%"])
+            
+            return response
+    
+    else:
+        date_form = DateRangeForm()
+    
+    context = {
+        'date_form': date_form,
+        'title': 'Patient Demographics Report',
+        'user_type': request.user.profile.user_type,
+    }
+    return render(request, 'reports/report_form.html', context)
+
+# Helper functions for generating report data (ALL KEPT INTACT)
 
 def get_date_range(date_form):
     """Extract date range from form"""
     date_range = date_form.cleaned_data['date_range']
-    today = timezone.now().date()  # This uses the imported timezone at the top
+    today = timezone.now().date()
     
     if date_range == 'today':
         start_date = datetime.combine(today, datetime.min.time())
@@ -740,13 +979,11 @@ def get_date_range(date_form):
         start_date = datetime.combine(date_form.cleaned_data['start_date'], datetime.min.time())
         end_date = datetime.combine(date_form.cleaned_data['end_date'], datetime.max.time())
     
-    # Make timezone aware - remove the duplicate import
+    # Make timezone aware
     start_date = timezone.make_aware(start_date)
     end_date = timezone.make_aware(end_date)
     
     return start_date, end_date
-
-
 
 def generate_patient_census(start_date, end_date, params):
     """Generate patient census data for display"""
@@ -840,39 +1077,158 @@ def generate_medical_records_summary(start_date, end_date):
     
     return data
 
-def generate_procedure_analysis(start_date, end_date):
-    """Generate procedure analysis data"""
-    procedures = Procedure.objects.filter(
-        date_performed__range=[start_date, end_date]
+def generate_diagnosis_frequency(start_date, end_date, params):
+    """Generate diagnosis frequency data"""
+    diagnoses = Diagnosis.objects.filter(
+        medical_record__visit_date__range=[start_date, end_date]
     )
     
     data = {
-        'total_procedures': procedures.count(),
-        'by_type': [],
-        'by_doctor': [],
+        'total_diagnoses': diagnoses.count(),
+        'by_diagnosis': [],
     }
     
-    # Group by procedure name
-    proc_counts = procedures.values('procedure_name').annotate(
+    freq = diagnoses.values('icd10_code', 'description').annotate(
         count=Count('id')
     ).order_by('-count')[:20]
     
-    for item in proc_counts:
-        data['by_type'].append({
-            'name': item['procedure_name'],
+    for item in freq:
+        data['by_diagnosis'].append({
+            'code': item['icd10_code'],
+            'description': item['description'][:50],
             'count': item['count']
         })
     
-    # Group by doctor
-    doctor_counts = procedures.values('performed_by__first_name', 'performed_by__last_name').annotate(
-        count=Count('id')
-    ).order_by('-count')[:10]
+    return data
+
+def generate_prescription_analysis(start_date, end_date, params):
+    """Generate prescription analysis data"""
+    prescriptions = Prescription.objects.filter(
+        prescribed_date__range=[start_date, end_date]
+    )
     
-    for item in doctor_counts:
-        doctor_name = f"{item['performed_by__first_name'] or ''} {item['performed_by__last_name'] or ''}".strip()
-        data['by_doctor'].append({
-            'doctor': doctor_name or 'Unknown',
+    data = {
+        'total_prescriptions': prescriptions.count(),
+        'by_medication': [],
+    }
+    
+    med_counts = prescriptions.values('medication_name').annotate(
+        count=Count('id')
+    ).order_by('-count')[:20]
+    
+    for item in med_counts:
+        data['by_medication'].append({
+            'name': item['medication_name'] or 'Unknown',
             'count': item['count']
+        })
+    
+    return data
+
+def generate_lab_utilization(start_date, end_date, params):
+    """Generate lab utilization data"""
+    lab_orders = LabOrder.objects.filter(
+        ordered_date__range=[start_date, end_date]
+    )
+    
+    data = {
+        'total_orders': lab_orders.count(),
+        'by_test': [],
+        'by_status': [],
+    }
+    
+    test_stats = lab_orders.values('test_name').annotate(
+        count=Count('id')
+    ).order_by('-count')[:20]
+    
+    for item in test_stats:
+        data['by_test'].append({
+            'name': item['test_name'] or 'Unknown',
+            'count': item['count']
+        })
+    
+    status_counts = lab_orders.values('status').annotate(
+        count=Count('id')
+    )
+    
+    for item in status_counts:
+        data['by_status'].append({
+            'status': item['status'],
+            'count': item['count']
+        })
+    
+    return data
+
+def generate_imaging_utilization(start_date, end_date):
+    """Generate imaging utilization data"""
+    imaging_orders = ImagingOrder.objects.filter(
+        ordered_date__range=[start_date, end_date]
+    )
+    
+    data = {
+        'total_orders': imaging_orders.count(),
+        'by_type': [],
+    }
+    
+    type_counts = imaging_orders.values('imaging_type').annotate(
+        count=Count('id')
+    ).order_by('-count')
+    
+    for item in type_counts:
+        data['by_type'].append({
+            'type': item['imaging_type'],
+            'count': item['count']
+        })
+    
+    return data
+
+def generate_patient_demographics(start_date, end_date):
+    """Generate patient demographics data"""
+    patients = Patient.objects.filter(
+        registration_date__range=[start_date, end_date]
+    )
+    
+    data = {
+        'total_patients': patients.count(),
+        'by_gender': [],
+        'by_age_group': [],
+    }
+    
+    gender_counts = patients.values('gender').annotate(
+        count=Count('id')
+    )
+    
+    for item in gender_counts:
+        data['by_gender'].append({
+            'gender': item['gender'] or 'Unknown',
+            'count': item['count']
+        })
+    
+    # Age groups
+    age_groups = {
+        '0-18': 0,
+        '19-35': 0,
+        '36-50': 0,
+        '51-65': 0,
+        '65+': 0,
+    }
+    
+    for patient in patients.iterator():
+        age = patient.age()
+        if age <= 18:
+            age_groups['0-18'] += 1
+        elif age <= 35:
+            age_groups['19-35'] += 1
+        elif age <= 50:
+            age_groups['36-50'] += 1
+        elif age <= 65:
+            age_groups['51-65'] += 1
+        else:
+            age_groups['65+'] += 1
+    
+    for group, count in age_groups.items():
+        data['by_age_group'].append({
+            'group': group,
+            'count': count
         })
     
     return data
@@ -919,6 +1275,43 @@ def generate_physician_workload(start_date, end_date):
     
     return data
 
+def generate_procedure_analysis(start_date, end_date):
+    """Generate procedure analysis data"""
+    procedures = Procedure.objects.filter(
+        date_performed__range=[start_date, end_date]
+    )
+    
+    data = {
+        'total_procedures': procedures.count(),
+        'by_type': [],
+        'by_doctor': [],
+    }
+    
+    # Group by procedure name
+    proc_counts = procedures.values('procedure_name').annotate(
+        count=Count('id')
+    ).order_by('-count')[:20]
+    
+    for item in proc_counts:
+        data['by_type'].append({
+            'name': item['procedure_name'],
+            'count': item['count']
+        })
+    
+    # Group by doctor
+    doctor_counts = procedures.values('performed_by__first_name', 'performed_by__last_name').annotate(
+        count=Count('id')
+    ).order_by('-count')[:10]
+    
+    for item in doctor_counts:
+        doctor_name = f"{item['performed_by__first_name'] or ''} {item['performed_by__last_name'] or ''}".strip()
+        data['by_doctor'].append({
+            'doctor': doctor_name or 'Unknown',
+            'count': item['count']
+        })
+    
+    return data
+
 def generate_widget_data(widget):
     """Generate data for dashboard widget"""
     end_date = timezone.now()
@@ -934,8 +1327,18 @@ def generate_widget_data(widget):
         return generate_medical_records_summary(start_date, end_date)
     elif widget.report_type == 'diagnosis_frequency':
         return generate_diagnosis_frequency(start_date, end_date, {'scope': 'top_10'})
+    elif widget.report_type == 'prescription_analysis':
+        return generate_prescription_analysis(start_date, end_date, {})
     elif widget.report_type == 'lab_utilization':
         return generate_lab_utilization(start_date, end_date, {})
+    elif widget.report_type == 'imaging_utilization':
+        return generate_imaging_utilization(start_date, end_date)
+    elif widget.report_type == 'patient_demographics':
+        return generate_patient_demographics(start_date, end_date)
+    elif widget.report_type == 'physician_workload':
+        return generate_physician_workload(start_date, end_date)
+    elif widget.report_type == 'procedure_analysis':
+        return generate_procedure_analysis(start_date, end_date)
     else:
         return {}
 
@@ -1057,6 +1460,11 @@ def api_report_data(request, report_type):
         end_date = timezone.now()
         start_date = end_date - timedelta(days=30)
     
+    # Check if user has permission for this report type
+    user_type = request.user.profile.user_type
+    if not has_api_report_permission(user_type, report_type):
+        return JsonResponse({'error': 'Permission denied'}, status=403)
+    
     if report_type == 'patient_census':
         data = generate_patient_census(start_date, end_date, request.GET)
     elif report_type == 'medical_records':
@@ -1067,12 +1475,21 @@ def api_report_data(request, report_type):
         data = generate_prescription_analysis(start_date, end_date, request.GET)
     elif report_type == 'lab_utilization':
         data = generate_lab_utilization(start_date, end_date, request.GET)
+    elif report_type == 'imaging_utilization':
+        data = generate_imaging_utilization(start_date, end_date)
+    elif report_type == 'patient_demographics':
+        data = generate_patient_demographics(start_date, end_date)
+    elif report_type == 'physician_workload':
+        data = generate_physician_workload(start_date, end_date)
+    elif report_type == 'procedure_analysis':
+        data = generate_procedure_analysis(start_date, end_date)
     else:
         data = {}
     
     return JsonResponse(data)
 
 @login_required
+@role_required(['admin'])  # Only admin can save widgets
 def api_save_widget(request):
     """API endpoint to save dashboard widget configuration"""
     if request.method == 'POST':
@@ -1096,6 +1513,7 @@ def api_save_widget(request):
 
 # Download views using report_generators
 @login_required
+@role_required(['admin', 'doctor'])
 def medical_records_report_download(request):
     """Generate medical records report as CSV download using generator"""
     if request.method == 'POST':
@@ -1118,6 +1536,7 @@ def medical_records_report_download(request):
     return redirect('reports:medical_records')
 
 @login_required
+@role_required(['admin', 'doctor'])
 def diagnosis_frequency_report_download(request):
     """Generate diagnosis frequency report as CSV download using generator"""
     if request.method == 'POST':
@@ -1140,6 +1559,7 @@ def diagnosis_frequency_report_download(request):
     return redirect('reports:diagnosis_frequency')
 
 @login_required
+@role_required(['admin', 'doctor'])
 def prescription_analysis_report_download(request):
     """Generate prescription analysis report as CSV download using generator"""
     if request.method == 'POST':
@@ -1162,6 +1582,7 @@ def prescription_analysis_report_download(request):
     return redirect('reports:prescription_analysis')
 
 @login_required
+@role_required(['admin', 'doctor', 'lab_tech'])
 def lab_utilization_report_download(request):
     """Generate lab utilization report as CSV download using generator"""
     if request.method == 'POST':
@@ -1184,6 +1605,7 @@ def lab_utilization_report_download(request):
     return redirect('reports:lab_utilization')
 
 @login_required
+@role_required(['admin', 'doctor'])
 def imaging_utilization_report_download(request):
     """Generate imaging utilization report as CSV download using generator"""
     if request.method == 'POST':
@@ -1204,6 +1626,7 @@ def imaging_utilization_report_download(request):
     return redirect('reports:imaging_utilization')
 
 @login_required
+@role_required(['admin', 'doctor'])
 def procedure_analysis_report_download(request):
     """Generate procedure analysis report as CSV download using generator"""
     if request.method == 'POST':
@@ -1224,6 +1647,7 @@ def procedure_analysis_report_download(request):
     return redirect('reports:procedure_analysis')
 
 @login_required
+@role_required(['admin', 'receptionist', 'doctor'])
 def patient_visit_summary_report_download(request):
     """Generate patient visit summary report as CSV download using generator"""
     if request.method == 'POST':
@@ -1242,3 +1666,25 @@ def patient_visit_summary_report_download(request):
             )
     
     return redirect('reports:patient_visit_summary')
+
+# Helper function to check report permissions
+def has_report_permission(user_type, report_type):
+    """Check if user type has permission for specific report type"""
+    permissions = {
+        'patient_census': ['admin', 'doctor', 'receptionist'],
+        'medical_records': ['admin', 'doctor'],
+        'diagnosis_frequency': ['admin', 'doctor'],
+        'prescription_analysis': ['admin', 'doctor'],
+        'lab_utilization': ['admin', 'doctor', 'lab_tech'],
+        'imaging_utilization': ['admin', 'doctor'],
+        'patient_demographics': ['admin', 'receptionist'],
+        'physician_workload': ['admin', 'doctor'],
+        'procedure_analysis': ['admin', 'doctor'],
+    }
+    
+    allowed_roles = permissions.get(report_type, ['admin'])
+    return user_type in allowed_roles
+
+def has_api_report_permission(user_type, report_type):
+    """Check if user type has permission for API report data"""
+    return has_report_permission(user_type, report_type)

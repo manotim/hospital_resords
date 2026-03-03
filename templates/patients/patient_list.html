@@ -1,3 +1,4 @@
+<!-- templates/patients/patient_list.html -->
 {% extends 'base.html' %}
 
 {% block title %}Patient List - Hospital Records{% endblock %}
@@ -6,22 +7,53 @@
 <div class="container-fluid py-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2>Patient Management</h2>
+        
+        <!-- Register New Patient - Receptionists and Admins only -->
+        {% if user.profile.user_type == 'receptionist' or user.profile.user_type == 'admin' %}
         <a href="{% url 'patients:patient_add' %}" class="btn btn-primary">
             <i class="fas fa-plus me-2"></i>Register New Patient
         </a>
+        {% endif %}
     </div>
+    
+    <!-- Action-specific message -->
+    {% if action %}
+    <div class="alert alert-info alert-dismissible fade show mb-4" role="alert">
+        <i class="fas fa-info-circle me-2"></i>
+        {% if action == 'order_lab' %}
+            <strong>Select a patient with an existing medical record</strong> to order a lab test. Click the "Order Lab" button next to the patient.
+        {% elif action == 'add_prescription' %}
+            <strong>Select a patient with an existing medical record</strong> to add a prescription. Click the "Prescribe" button next to the patient.
+        {% elif action == 'add_procedure' %}
+            <strong>Select a patient with an existing medical record</strong> to add a procedure. Click the "Add Procedure" button next to the patient.
+        {% elif action == 'add_note' %}
+            <strong>Select a patient with an existing medical record</strong> to add a clinical note. Click the "Add Note" button next to the patient.
+        {% elif action == 'create_and_lab' %}
+            <strong>Select a patient</strong> to create a new medical record and order a lab test.
+        {% elif action == 'create_and_prescribe' %}
+            <strong>Select a patient</strong> to create a new medical record and add a prescription.
+        {% elif action == 'create_and_imaging' %}
+            <strong>Select a patient</strong> to create a new medical record and order an imaging study.
+        {% elif action == 'create_and_procedure' %}
+            <strong>Select a patient</strong> to create a new medical record and add a procedure.
+        {% elif action == 'create_and_note' %}
+            <strong>Select a patient</strong> to create a new medical record and add a clinical note.
+        {% endif %}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endif %}
     
     <!-- Search and Filter -->
     <div class="card mb-4">
         <div class="card-body">
             <form method="get" class="row g-3">
-                <div class="col-md-6">
+                <div class="col-md-5">
                     <div class="input-group">
                         <span class="input-group-text"><i class="fas fa-search"></i></span>
                         <input type="text" name="q" class="form-control" placeholder="Search by name, ID, or phone..." value="{{ query }}">
                     </div>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <select name="status" class="form-select">
                         <option value="">All Status</option>
                         <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Active</option>
@@ -30,8 +62,17 @@
                     </select>
                 </div>
                 <div class="col-md-2">
-                    <button type="submit" class="btn btn-primary w-100">Filter</button>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-filter me-2"></i>Filter
+                    </button>
                 </div>
+                {% if action %}
+                <div class="col-md-2">
+                    <a href="{% url 'patients:patient_list' %}" class="btn btn-secondary w-100">
+                        <i class="fas fa-times me-2"></i>Clear Action
+                    </a>
+                </div>
+                {% endif %}
             </form>
         </div>
     </div>
@@ -73,20 +114,139 @@
                             </td>
                             <td>
                                 <div class="btn-group" role="group">
+                                    <!-- View - All staff -->
                                     <a href="{% url 'patients:patient_detail' patient.pk %}" class="btn btn-sm btn-info" title="View">
                                         <i class="fas fa-eye"></i>
                                     </a>
-                                    <a href="{% url 'patients:patient_edit' patient.pk %}" class="btn btn-sm btn-warning" title="Edit">
-                                        <i class="fas fa-edit"></i>
-                                    </a>
-                                    {% if patient.status != 'active' %}
-                                    <a href="{% url 'patients:admit_patient' patient.pk %}" class="btn btn-sm btn-success" title="Admit">
-                                        <i class="fas fa-procedures"></i>
-                                    </a>
+                                    
+                                    <!-- Conditional action buttons based on URL parameter -->
+                                    {% if action == 'order_lab' %}
+                                        <!-- Show button to order lab for this patient's latest record -->
+                                        {% with latest_record=patient.medical_records.first %}
+                                            {% if latest_record %}
+                                            <a href="{% url 'records:order_lab' latest_record.pk %}" class="btn btn-sm btn-primary" title="Order Lab Test">
+                                                <i class="fas fa-flask me-1"></i>Order Lab
+                                            </a>
+                                            {% else %}
+                                            <button class="btn btn-sm btn-secondary" disabled title="No medical record found">
+                                                <i class="fas fa-flask me-1"></i>No Record
+                                            </button>
+                                            {% endif %}
+                                        {% endwith %}
+                                    
+                                    {% elif action == 'add_prescription' %}
+                                        <!-- Show button to add prescription for this patient's latest record -->
+                                        {% with latest_record=patient.medical_records.first %}
+                                            {% if latest_record %}
+                                            <a href="{% url 'records:add_prescription' latest_record.pk %}" class="btn btn-sm btn-success" title="Add Prescription">
+                                                <i class="fas fa-pills me-1"></i>Prescribe
+                                            </a>
+                                            {% else %}
+                                            <button class="btn btn-sm btn-secondary" disabled title="No medical record found">
+                                                <i class="fas fa-pills me-1"></i>No Record
+                                            </button>
+                                            {% endif %}
+                                        {% endwith %}
+                                    
+                                    {% elif action == 'add_procedure' %}
+                                        <!-- Show button to add procedure for this patient's latest record -->
+                                        {% with latest_record=patient.medical_records.first %}
+                                            {% if latest_record %}
+                                            <a href="{% url 'records:add_procedure' latest_record.pk %}" class="btn btn-sm btn-warning" title="Add Procedure">
+                                                <i class="fas fa-syringe me-1"></i>Procedure
+                                            </a>
+                                            {% else %}
+                                            <button class="btn btn-sm btn-secondary" disabled title="No medical record found">
+                                                <i class="fas fa-syringe me-1"></i>No Record
+                                            </button>
+                                            {% endif %}
+                                        {% endwith %}
+                                    
+                                    {% elif action == 'add_note' %}
+                                        <!-- Show button to add note for this patient's latest record -->
+                                        {% with latest_record=patient.medical_records.first %}
+                                            {% if latest_record %}
+                                            <a href="{% url 'records:add_clinical_note' latest_record.pk %}" class="btn btn-sm btn-info" title="Add Clinical Note">
+                                                <i class="fas fa-pen me-1"></i>Add Note
+                                            </a>
+                                            {% else %}
+                                            <button class="btn btn-sm btn-secondary" disabled title="No medical record found">
+                                                <i class="fas fa-pen me-1"></i>No Record
+                                            </button>
+                                            {% endif %}
+                                        {% endwith %}
+                                    
+                                    {% elif action == 'create_and_lab' %}
+                                        <!-- Show button to create record and order lab -->
+                                        <a href="{% url 'records:create_record' patient.pk %}?next=order_lab" class="btn btn-sm btn-primary" title="Create Record & Order Lab">
+                                            <i class="fas fa-flask me-1"></i>Create & Lab
+                                        </a>
+                                    
+                                    {% elif action == 'create_and_prescribe' %}
+                                        <!-- Show button to create record and add prescription -->
+                                        <a href="{% url 'records:create_record' patient.pk %}?next=add_prescription" class="btn btn-sm btn-success" title="Create Record & Prescribe">
+                                            <i class="fas fa-pills me-1"></i>Create & Prescribe
+                                        </a>
+                                    
+                                    {% elif action == 'create_and_imaging' %}
+                                        <!-- Show button to create record and order imaging -->
+                                        <a href="{% url 'records:create_record' patient.pk %}?next=order_imaging" class="btn btn-sm btn-info" title="Create Record & Order Imaging">
+                                            <i class="fas fa-x-ray me-1"></i>Create & Image
+                                        </a>
+                                    
+                                    {% elif action == 'create_and_procedure' %}
+                                        <!-- Show button to create record and add procedure -->
+                                        <a href="{% url 'records:create_record' patient.pk %}?next=add_procedure" class="btn btn-sm btn-warning" title="Create Record & Add Procedure">
+                                            <i class="fas fa-syringe me-1"></i>Create & Procedure
+                                        </a>
+                                    
+                                    {% elif action == 'create_and_note' %}
+                                        <!-- Show button to create record and add note -->
+                                        <a href="{% url 'records:create_record' patient.pk %}?next=add_note" class="btn btn-sm btn-secondary" title="Create Record & Add Note">
+                                            <i class="fas fa-pen me-1"></i>Create & Note
+                                        </a>
+                                    
+                                    {% else %}
+                                        <!-- Default actions -->
+                                        <!-- Edit - Clinical staff and receptionists -->
+                                        {% if user.profile.user_type == 'doctor' or user.profile.user_type == 'nurse' or user.profile.user_type == 'receptionist' or user.profile.user_type == 'admin' %}
+                                        <a href="{% url 'patients:patient_edit' patient.pk %}" class="btn btn-sm btn-warning" title="Edit">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        {% endif %}
+                                        
+                                        <!-- Admit - Clinical staff only -->
+                                        {% if patient.status != 'active' and user.profile.user_type == 'doctor' or user.profile.user_type == 'nurse' or user.profile.user_type == 'admin' %}
+                                        <a href="{% url 'patients:admit_patient' patient.pk %}" class="btn btn-sm btn-success" title="Admit">
+                                            <i class="fas fa-procedures"></i>
+                                        </a>
+                                        {% endif %}
+                                        
+                                        <!-- Create Medical Record - Doctors only -->
+                                        {% if user.profile.user_type == 'doctor' or user.profile.user_type == 'admin' %}
+                                        <a href="{% url 'records:create_record' patient.pk %}" class="btn btn-sm btn-primary" title="Add Medical Record">
+                                            <i class="fas fa-notes-medical"></i>
+                                        </a>
+                                        {% endif %}
+                                        
+                                        <!-- Record Vitals - Nurses only -->
+                                        {% if user.profile.user_type == 'nurse' or user.profile.user_type == 'admin' %}
+                                        <a href="{% url 'patients:add_vitals' patient.pk %}" class="btn btn-sm btn-success" title="Record Vitals">
+                                            <i class="fas fa-heartbeat"></i>
+                                        </a>
+                                        {% endif %}
+                                        
+                                        <!-- Order Lab - Medical staff -->
+                                        {% if user.profile.user_type == 'doctor' or user.profile.user_type == 'lab_tech' or user.profile.user_type == 'admin' %}
+                                            {% with latest_record=patient.medical_records.first %}
+                                                {% if latest_record %}
+                                                <a href="{% url 'records:order_lab' latest_record.pk %}" class="btn btn-sm btn-info" title="Order Lab Test">
+                                                    <i class="fas fa-flask"></i>
+                                                </a>
+                                                {% endif %}
+                                            {% endwith %}
+                                        {% endif %}
                                     {% endif %}
-                                    <a href="{% url 'records:create_record' patient.pk %}" class="btn btn-sm btn-primary" title="Add Medical Record">
-                                        <i class="fas fa-notes-medical"></i>
-                                    </a>
                                 </div>
                             </td>
                         </tr>
@@ -95,10 +255,18 @@
                             <td colspan="8" class="text-center py-5">
                                 <i class="fas fa-users fa-4x text-muted mb-3"></i>
                                 <h5 class="text-muted">No patients found</h5>
-                                <p class="text-muted mb-3">Get started by registering your first patient</p>
+                                <p class="text-muted mb-3">
+                                    {% if action %}
+                                        No patients available for this action.
+                                    {% else %}
+                                        Get started by registering your first patient
+                                    {% endif %}
+                                </p>
+                                {% if user.profile.user_type == 'receptionist' or user.profile.user_type == 'admin' %}
                                 <a href="{% url 'patients:patient_add' %}" class="btn btn-primary">
                                     <i class="fas fa-plus-circle me-2"></i>Register New Patient
                                 </a>
+                                {% endif %}
                             </td>
                         </tr>
                         {% endfor %}
@@ -108,4 +276,24 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Highlight rows for patients without medical records when action requires them
+        const action = '{{ action }}';
+        if (action === 'order_lab' || action === 'add_prescription' || 
+            action === 'add_procedure' || action === 'add_note') {
+            
+            document.querySelectorAll('tbody tr').forEach(row => {
+                const actionBtn = row.querySelector('.btn-group a.btn-primary, .btn-group a.btn-success');
+                if (actionBtn && actionBtn.disabled) {
+                    row.style.backgroundColor = '#fff3cd';  // Light yellow background
+                    row.title = 'This patient has no medical records';
+                }
+            });
+        }
+    });
+</script>
 {% endblock %}

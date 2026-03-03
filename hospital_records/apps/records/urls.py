@@ -37,4 +37,9 @@ urlpatterns = [
 
     path('api/recent-records/', views.api_recent_records, name='api_recent_records'),
     path('api/quick-create-record/', views.api_quick_create_record, name='api_quick_create_record'),
+
+    path('lab/order/quick/', views.quick_lab_order, name='quick_lab_order'),
+    path('lab/order/quick/patient/<int:patient_id>/', views.quick_lab_order_for_patient, name='quick_lab_order_for_patient'),
+
+    path('nursing-notes/', views.nursing_notes, name='nursing_notes'),
 ]

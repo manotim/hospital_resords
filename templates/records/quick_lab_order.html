@@ -1,0 +1,184 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-flask me-2"></i>{{ title }}
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-4">
+                        <i class="fas fa-info-circle me-2"></i>
+                        A minimal medical record will be automatically created for this lab order.
+                    </p>
+                    
+                    <form method="post" id="labOrderForm">
+                        {% csrf_token %}
+                        
+                        <!-- Patient Selection -->
+                        <div class="mb-3">
+                            <label class="form-label">Select Patient <span class="text-danger">*</span></label>
+                            <select name="patient" id="patientSelect" class="form-select" required>
+                                <option value="">--- Select Patient ---</option>
+                                {% for patient in patients %}
+                                <option value="{{ patient.id }}">
+                                    {{ patient.get_full_name }} ({{ patient.patient_id }}) - {{ patient.age }}yrs
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <!-- Test Details -->
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Test Name <span class="text-danger">*</span></label>
+                                <input type="text" name="test_name" class="form-control" required 
+                                       placeholder="e.g., Complete Blood Count">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Test Code</label>
+                                <input type="text" name="test_code" class="form-control" 
+                                       placeholder="e.g., CBC001">
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Priority</label>
+                                <select name="priority" class="form-select">
+                                    <option value="routine">Routine</option>
+                                    <option value="urgent">Urgent</option>
+                                    <option value="stat">STAT</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Specimen Type</label>
+                                <input type="text" name="specimen_type" class="form-control" 
+                                       placeholder="e.g., Blood, Urine">
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Clinical Notes</label>
+                            <textarea name="clinical_notes" class="form-control" rows="3" 
+                                      placeholder="Any specific instructions or clinical context..."></textarea>
+                        </div>
+                        
+                        <div class="mt-4">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-flask me-2"></i>Order Lab Test
+                            </button>
+                            <a href="{% url 'patients:patient_list' %}" class="btn btn-secondary">
+                                Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Quick Patient Select Sidebar -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Recent Patients</h5>
+                </div>
+                <div class="card-body">
+                    <input type="text" id="sidebarSearch" class="form-control mb-3" 
+                           placeholder="Search patients...">
+                    
+                    <div class="list-group" style="max-height: 400px; overflow-y: auto;">
+                        {% for patient in recent_patients %}
+                        <button type="button" class="list-group-item list-group-item-action patient-quick-select"
+                                data-patient-id="{{ patient.id }}"
+                                data-patient-name="{{ patient.get_full_name }}">
+                            <strong>{{ patient.get_full_name }}</strong><br>
+                            <small class="text-muted">
+                                ID: {{ patient.patient_id }} | Age: {{ patient.age }} | {{ patient.get_gender_display }}
+                            </small>
+                        </button>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Quick patient select buttons
+    const quickSelectBtns = document.querySelectorAll('.patient-quick-select');
+    const patientSelect = document.getElementById('patientSelect');
+    
+    quickSelectBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const patientId = this.dataset.patientId;
+            const patientName = this.dataset.patientName;
+            
+            // Update the select dropdown
+            if (patientSelect) {
+                patientSelect.value = patientId;
+                // Highlight the selection
+                patientSelect.classList.add('is-valid');
+            }
+            
+            // Show confirmation
+            alert(`Patient "${patientName}" selected. You can now order the lab test.`);
+        });
+    });
+    
+    // Sidebar search
+    const searchInput = document.getElementById('sidebarSearch');
+    if (searchInput) {
+        searchInput.addEventListener('keyup', function() {
+            const searchText = this.value.toLowerCase();
+            const items = document.querySelectorAll('.patient-quick-select');
+            
+            items.forEach(item => {
+                const text = item.textContent.toLowerCase();
+                if (text.includes(searchText)) {
+                    item.style.display = '';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        });
+    }
+    
+    // Form validation
+    const form = document.getElementById('labOrderForm');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            const patient = document.getElementById('patientSelect').value;
+            const testName = document.querySelector('[name="test_name"]').value;
+            
+            if (!patient) {
+                e.preventDefault();
+                alert('Please select a patient');
+                return;
+            }
+            
+            if (!testName) {
+                e.preventDefault();
+                alert('Please enter test name');
+                return;
+            }
+            
+            if (confirm('Are you sure you want to order this lab test? A medical record will be automatically created.')) {
+                return true;
+            } else {
+                e.preventDefault();
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

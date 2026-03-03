@@ -142,12 +142,36 @@ class ProcedureForm(forms.ModelForm):
             'notes': forms.Textarea(attrs={'rows': 3, 'class': 'form-control'}),
         }
 
+
+
+
+
 class ClinicalNoteForm(forms.ModelForm):
     class Meta:
         model = ClinicalNote
-        exclude = ['medical_record', 'author', 'created_at', 'updated_at']
+        fields = ['note_type', 'content', 'is_private']
         widgets = {
-            'note_type': forms.Select(attrs={'class': 'form-select'}),
             'content': forms.Textarea(attrs={'rows': 5, 'class': 'form-control'}),
+            'note_type': forms.Select(attrs={'class': 'form-select'}),
             'is_private': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
+    
+    def __init__(self, *args, **kwargs):
+        # Pop the user from kwargs (it's passed from the view)
+        user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+        
+        # If user is a nurse, set default to nursing and make field read-only
+        if user and hasattr(user, 'profile') and user.profile.user_type == 'nurse':
+            self.fields['note_type'].initial = 'nursing'
+            self.fields['note_type'].disabled = True  # Nurses can't change note type
+            self.fields['note_type'].help_text = "Nurses can only create nursing notes"
+            
+            # Hide is_private for nurses (optional)
+            self.fields['is_private'].widget = forms.HiddenInput()
+            self.fields['is_private'].initial = False
+        
+        # For doctors, make all fields available
+        elif user and hasattr(user, 'profile') and user.profile.user_type == 'doctor':
+            self.fields['note_type'].help_text = "Select the type of clinical note"
+

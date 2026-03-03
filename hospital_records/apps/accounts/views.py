@@ -1,10 +1,43 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth import authenticate, login
 from django.contrib import messages
 from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.forms import PasswordChangeForm
 from .models import UserProfile
 from .forms import UserProfileForm, UserForm
+
+def login_view(request):
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        user = authenticate(request, username=username, password=password)
+        
+        if user is not None:
+            login(request, user)
+            
+            # Check if user has profile
+            if hasattr(user, 'profile'):
+                user_type = user.profile.user_type
+                
+                # Role-based redirect
+                if user_type == 'doctor':
+                    return redirect('patients:doctor_dashboard')
+                elif user_type == 'nurse':
+                    return redirect('patients:nurse_dashboard')
+                elif user_type == 'receptionist':
+                    return redirect('patients:reception_dashboard')
+                elif user_type == 'lab_tech':
+                    return redirect('patients:lab_dashboard')
+                elif user_type == 'admin':
+                    return redirect('patients:dashboard')
+            else:
+                messages.warning(request, 'Please complete your profile.')
+                return redirect('accounts:edit_profile')
+        else:
+            messages.error(request, 'Invalid username or password.')
+    
+    return render(request, 'accounts/login.html')
 
 @login_required
 def profile(request):

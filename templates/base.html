@@ -43,6 +43,58 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <!-- Custom JS -->
     <script src="{% static 'js/main.js' %}"></script>
+    
+    <!-- Global JavaScript Functions -->
+    <script>
+        // Global functions for navigation actions
+        function showRecordSelector(action) {
+            // Redirect to patient list with action parameter
+            if (action === 'order_lab') {
+                window.location.href = '/patients/?action=order_lab';
+            } else if (action === 'add_prescription') {
+                window.location.href = '/patients/?action=add_prescription';
+            } else if (action === 'add_procedure') {
+                window.location.href = '/patients/?action=add_procedure';
+            } else if (action === 'add_clinical_note') {
+                window.location.href = '/patients/?action=add_note';
+            }
+            return false;
+        }
+
+        function showPatientSelector(action) {
+            // Redirect to patient list with action parameter for new records
+            if (action === 'create_and_lab') {
+                window.location.href = '/patients/?action=create_and_lab';
+            } else if (action === 'create_and_prescribe') {
+                window.location.href = '/patients/?action=create_and_prescribe';
+            } else if (action === 'create_and_imaging') {
+                window.location.href = '/patients/?action=create_and_imaging';
+            } else if (action === 'create_and_procedure') {
+                window.location.href = '/patients/?action=create_and_procedure';
+            } else if (action === 'create_and_note') {
+                window.location.href = '/patients/?action=create_and_note';
+            }
+            return false;
+        }
+
+        function showQuickStats(statType) {
+            // Show quick stats modal or redirect
+            alert('Quick stats feature coming soon!');
+            return false;
+        }
+
+        // Auto-hide alerts after 5 seconds
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(function() {
+                const alerts = document.querySelectorAll('.alert');
+                alerts.forEach(function(alert) {
+                    const bsAlert = new bootstrap.Alert(alert);
+                    bsAlert.close();
+                });
+            }, 5000);
+        });
+    </script>
+    
     {% block extra_js %}{% endblock %}
 </body>
 </html>
